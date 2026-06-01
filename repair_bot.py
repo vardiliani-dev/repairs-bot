@@ -713,7 +713,7 @@ def extract_invoice_data_from_text(text: str) -> dict:
         amount_match = re.search(r'[Вв]сього[:\s]+([0-9\s,\.]+)\s*грн', text)
     if not amount_match:
         # Шукаємо найбільше число в документі
-        numbers = re.findall(r'(\d{3,7}(?:[,\.]\d{2})?)', text)
+        numbers = re.findall(r'(\d{3,7}(?:[,\.]\d{2})?)', text)
         if numbers:
             amounts = [float(n.replace(',', '.').replace(' ', '')) for n in numbers]
             result["amount"] = int(max(amounts))
@@ -744,11 +744,9 @@ def extract_invoice_data_from_text(text: str) -> dict:
 
     # Постачальник
     sup_match = re.search(r"[Пп]остачальник[^\n]{0,5}([А-ЯҐЄІЇёA-Z][^\n]{3,50})", text)
-    sup_match = re.search(r"[Пп]остачальник[^\n]{0,5}([А-ЯҐЄІЇёA-Z][^\n]{3,50})", text)
     if sup_match:
         result["contractor"] = sup_match.group(1).strip()
 
-    # Опис послуг — перший рядок таблиці після заголовка
     # Опис послуг
     desc_patterns = [r"Заправка[^\n]{0,50}", r"Ремонт[^\n]{0,50}", r"[Зз]аміна[^\n]{0,50}", r"ТО[^\n]{0,30}"]
     for pat in desc_patterns:
@@ -786,7 +784,8 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
             file_bytes = bytes(await file.download_as_bytearray())
             mime = update.message.document.mime_type or "application/pdf"
             is_pdf = "pdf" in mime.lower()
-            is_excel = any(x in mime.lower() for x in ["excel", "spreadsheet", "xls"]) or                        update.message.document.file_name.endswith((".xls", ".xlsx"))
+            is_excel = any(x in mime.lower() for x in ["excel", "spreadsheet", "xls"]) or \
+                       update.message.document.file_name.endswith((".xls", ".xlsx"))
             context.user_data["file_id"] = update.message.document.file_id
             context.user_data["file_type"] = "document"
         elif update.message.photo:
@@ -946,13 +945,16 @@ async def director_approve(query, context, record_id):
         ws.update_cell(cell.row, 12, "Погоджено")
         ws.update_cell(cell.row, 13, datetime.now().strftime("%d.%m.%Y %H:%M"))
 
-        await query.edit_message_caption(
-            query.message.caption + "\n\n✅ <b>Погоджено директором</b>",
-            parse_mode="HTML"
-        ) if query.message.caption else await query.edit_message_text(
-            query.message.text + "\n\n✅ <b>Погоджено директором</b>",
-            parse_mode="HTML"
-        )
+        if query.message.caption:
+            await query.edit_message_caption(
+                query.message.caption + "\n\n✅ <b>Погоджено директором</b>",
+                parse_mode="HTML"
+            )
+        else:
+            await query.edit_message_text(
+                query.message.text + "\n\n✅ <b>Погоджено директором</b>",
+                parse_mode="HTML"
+            )
 
         # Відправляємо бухгалтеру
         data = context.application.bot_data.get(f"repair_{record_id}", {})
@@ -1011,13 +1013,16 @@ async def director_reject(query, context, record_id):
         cell = ws.find(str(record_id))
         ws.update_cell(cell.row, 12, "Відхилено директором")
 
-        await query.edit_message_caption(
-            query.message.caption + "\n\n❌ <b>Відхилено директором</b>",
-            parse_mode="HTML"
-        ) if query.message.caption else await query.edit_message_text(
-            query.message.text + "\n\n❌ <b>Відхилено директором</b>",
-            parse_mode="HTML"
-        )
+        if query.message.caption:
+            await query.edit_message_caption(
+                query.message.caption + "\n\n❌ <b>Відхилено директором</b>",
+                parse_mode="HTML"
+            )
+        else:
+            await query.edit_message_text(
+                query.message.text + "\n\n❌ <b>Відхилено директором</b>",
+                parse_mode="HTML"
+            )
 
         data = context.application.bot_data.get(f"repair_{record_id}", {})
         manager_id = data.get("manager_id")
@@ -1043,13 +1048,16 @@ async def accountant_paid(query, context, record_id):
         ws.update_cell(cell.row, 12, "Оплачено")
         ws.update_cell(cell.row, 14, datetime.now().strftime("%d.%m.%Y %H:%M"))
 
-        await query.edit_message_caption(
-            query.message.caption + "\n\n✅ <b>Оплачено</b>",
-            parse_mode="HTML"
-        ) if query.message.caption else await query.edit_message_text(
-            query.message.text + "\n\n✅ <b>Оплачено</b>",
-            parse_mode="HTML"
-        )
+        if query.message.caption:
+            await query.edit_message_caption(
+                query.message.caption + "\n\n✅ <b>Оплачено</b>",
+                parse_mode="HTML"
+            )
+        else:
+            await query.edit_message_text(
+                query.message.text + "\n\n✅ <b>Оплачено</b>",
+                parse_mode="HTML"
+            )
 
         data = context.application.bot_data.get(f"repair_{record_id}", {})
         manager_id = data.get("manager_id")
