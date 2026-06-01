@@ -169,7 +169,7 @@ async def recognize_document(file_content: bytes, mime_type: str, is_pdf: bool =
         ]
 
     response = client.messages.create(
-        model="claude-opus-4-5-20251101",
+        model="claude-sonnet-4-5",
         max_tokens=1000,
         messages=[{"role": "user", "content": content}]
     )
