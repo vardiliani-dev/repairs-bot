@@ -131,6 +131,22 @@ def get_movements_sheet():
         "Машина", "Менеджер", "Статус", "Примітка"
     ])
 
+def find_repair_row_by_id(ws, record_id):
+    """Знаходить рядок заявки за ID в колонці A. Повертає номер рядка або None."""
+    col_a = ws.col_values(1)  # вся колонка A
+    target = str(record_id)
+    for i, val in enumerate(col_a, start=1):
+        if str(val).strip() == target:
+            return i
+    return None
+
+def get_manager_id_by_name(name):
+    """Знаходить Telegram ID менеджера за іменем."""
+    for uid, uname in MANAGER_NAMES.items():
+        if uname == name:
+            return uid
+    return None
+
 # ══════════════════════════════════════════════
 # СКЛАД - ЛОГІКА
 # ══════════════════════════════════════════════
@@ -1100,66 +1116,146 @@ async def director_approve(query, context, record_id):
         return
     try:
         ws = get_repairs_sheet()
-        cell = ws.find(str(record_id))
-        ws.update_cell(cell.row, 12, "Погоджено")
-        ws.update_cell(cell.row, 13, datetime.now().strftime("%d.%m.%Y %H:%M"))
+        row = find_repair_row_by_id(ws, record_id)
+        if not row:
+            await query.answer("❌ Заявку не знайдено.", show_alert=True)
+            return
 
-        if query.message.caption:
-            await query.edit_message_caption(
-                query.message.caption + "\n\n✅ <b>Погоджено директором</b>",
-                parse_mode="HTML"
-            )
+        # Читаємо дані заявки з таблиці (на випадок якщо bot_data очистилось)
+        row_data = ws.row_values(row)
+        # Колонки: 1=ID, 2=Дата, 3=Тип, 4=Машина, 5=ТипМашини, 6=Опис,
+        #         7=Сума, 8=ФормаОплати, 9=СТО, 10=Рахунок, 11=Менеджер
+        op_label   = row_data[2] if len(row_data) > 2 else ""
+        vehicle    = row_data[3] if len(row_data) > 3 else ""
+        vtype      = row_data[4] if len(row_data) > 4 else ""
+        desc       = row_data[5] if len(row_data) > 5 else ""
+        amount     = row_data[6] if len(row_data) > 6 else ""
+        payment    = row_data[7] if len(row_data) > 7 else ""
+        contractor = row_data[8] if len(row_data) > 8 else ""
+        manager_name = row_data[10] if len(row_data) > 10 else ""
+
+        is_cash = payment.lower() == "готівка"
+
+        # Оновлюємо статус
+        if is_cash:
+            # Готівка — одразу "Оплачено" (без бухгалтера)
+            ws.update_cell(row, 12, "Оплачено")
+            ws.update_cell(row, 13, datetime.now().strftime("%d.%m.%Y %H:%M"))
+            ws.update_cell(row, 14, datetime.now().strftime("%d.%m.%Y %H:%M"))
+            status_text = "✅ <b>Погоджено та оплачено готівкою</b>"
         else:
-            await query.edit_message_text(
-                query.message.text + "\n\n✅ <b>Погоджено директором</b>",
-                parse_mode="HTML"
-            )
+            ws.update_cell(row, 12, "Погоджено")
+            ws.update_cell(row, 13, datetime.now().strftime("%d.%m.%Y %H:%M"))
+            status_text = "✅ <b>Погоджено директором</b>"
 
+        # Оновлюємо повідомлення директору
+        try:
+            if query.message.caption:
+                await query.edit_message_caption(
+                    query.message.caption + "\n\n" + status_text,
+                    parse_mode="HTML"
+                )
+            else:
+                await query.edit_message_text(
+                    query.message.text + "\n\n" + status_text,
+                    parse_mode="HTML"
+                )
+        except Exception as e:
+            logger.error(f"edit message error: {e}")
+
+        # Дістаємо додаткові дані з bot_data (якщо є) — для складу і файлу
         data = context.application.bot_data.get(f"repair_{record_id}", {})
+        file_id   = data.get("file_id")
+        file_type = data.get("file_type")
+
+        # Визначаємо ID менеджера
+        manager_id = data.get("manager_id") or get_manager_id_by_name(manager_name)
+
+        # Якщо готівка і закупка — одразу оновлюємо склад
+        if is_cash and op_label == "Закупка":
+            name  = data.get("stock_name", "")
+            qty   = float(data.get("stock_qty", 0) or 0)
+            unit  = data.get("stock_unit", "")
+            try:
+                amount_val = float(str(amount).replace(" ", "").replace(",", ".") or 0)
+            except Exception:
+                amount_val = 0
+            price_per_unit = round(amount_val / qty, 2) if qty else 0
+            if name and qty:
+                try:
+                    update_stock(name, unit, qty, price_per_unit)
+                except Exception as e:
+                    logger.error(f"update_stock error: {e}")
+
+        # Якщо готівка — повідомляємо менеджера про оплату
+        if is_cash:
+            if manager_id:
+                try:
+                    await context.bot.send_message(
+                        chat_id=manager_id,
+                        text=f"✅ Заявку #{record_id} <b>погоджено та оплачено готівкою</b>.",
+                        parse_mode="HTML"
+                    )
+                except Exception as e:
+                    logger.error(f"notify manager (cash) error: {e}")
+            return
+
+        # Безнал — передаємо бухгалтеру
         accountant_text = (
             f"💳 <b>До оплати — заявка #{record_id}</b>\n\n"
-            f"📋 Тип: {data.get('op_type','')}\n"
-            f"🚗 Машина: {data.get('vehicle_type','')} {data.get('vehicle','')}\n"
-            f"📝 {data.get('description','')}\n"
-            f"💰 Сума: {data.get('amount','')} грн\n"
-            f"💳 Оплата: {data.get('payment','')}\n"
-            f"🏪 {data.get('contractor','')}\n"
+            f"📋 Тип: {op_label}\n"
+            f"🚗 Машина: {vtype} {vehicle}\n"
+            f"📝 {desc}\n"
+            f"💰 Сума: {amount} грн\n"
+            f"💳 Оплата: {payment}\n"
+            f"🏪 {contractor}\n"
             f"✅ Погоджено директором"
         )
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("✅ Оплачено", callback_data=f"accountant_paid_{record_id}")]
         ])
 
-        file_id   = data.get("file_id")
-        file_type = data.get("file_type")
-
-        if file_id:
-            if file_type == "document":
-                await context.bot.send_document(
-                    chat_id=ACCOUNTANT_ID, document=file_id,
-                    caption=accountant_text, parse_mode="HTML", reply_markup=keyboard
-                )
+        try:
+            if file_id:
+                if file_type == "document":
+                    await context.bot.send_document(
+                        chat_id=ACCOUNTANT_ID, document=file_id,
+                        caption=accountant_text, parse_mode="HTML", reply_markup=keyboard
+                    )
+                else:
+                    await context.bot.send_photo(
+                        chat_id=ACCOUNTANT_ID, photo=file_id,
+                        caption=accountant_text, parse_mode="HTML", reply_markup=keyboard
+                    )
             else:
-                await context.bot.send_photo(
-                    chat_id=ACCOUNTANT_ID, photo=file_id,
-                    caption=accountant_text, parse_mode="HTML", reply_markup=keyboard
+                await context.bot.send_message(
+                    chat_id=ACCOUNTANT_ID, text=accountant_text,
+                    parse_mode="HTML", reply_markup=keyboard
                 )
-        else:
-            await context.bot.send_message(
-                chat_id=ACCOUNTANT_ID, text=accountant_text,
-                parse_mode="HTML", reply_markup=keyboard
-            )
+        except Exception as e:
+            logger.error(f"send to accountant error: {e}")
+            # Якщо бухгалтер недоступний — попередити директора
+            try:
+                await context.bot.send_message(
+                    chat_id=DIRECTOR_ID,
+                    text=f"⚠️ Не вдалось надіслати заявку #{record_id} бухгалтеру: {str(e)[:100]}"
+                )
+            except Exception:
+                pass
 
-        manager_id = data.get("manager_id")
+        # Повідомити менеджера
         if manager_id:
-            await context.bot.send_message(
-                chat_id=manager_id,
-                text=f"✅ Заявку #{record_id} <b>погоджено директором</b>. Передано бухгалтеру на оплату.",
-                parse_mode="HTML"
-            )
+            try:
+                await context.bot.send_message(
+                    chat_id=manager_id,
+                    text=f"✅ Заявку #{record_id} <b>погоджено директором</b>. Передано бухгалтеру на оплату.",
+                    parse_mode="HTML"
+                )
+            except Exception as e:
+                logger.error(f"notify manager error: {e}")
 
     except Exception as e:
-        logger.error(f"director_approve error: {e}")
+        logger.error(f"director_approve error: {e}", exc_info=True)
 
 async def director_reject(query, context, record_id):
     if query.from_user.id != DIRECTOR_ID:
@@ -1167,28 +1263,39 @@ async def director_reject(query, context, record_id):
         return
     try:
         ws = get_repairs_sheet()
-        cell = ws.find(str(record_id))
-        ws.update_cell(cell.row, 12, "Відхилено директором")
+        row = find_repair_row_by_id(ws, record_id)
+        if not row:
+            await query.answer("❌ Заявку не знайдено.", show_alert=True)
+            return
+        ws.update_cell(row, 12, "Відхилено директором")
 
-        if query.message.caption:
-            await query.edit_message_caption(
-                query.message.caption + "\n\n❌ <b>Відхилено директором</b>",
-                parse_mode="HTML"
-            )
-        else:
-            await query.edit_message_text(
-                query.message.text + "\n\n❌ <b>Відхилено директором</b>",
-                parse_mode="HTML"
-            )
+        try:
+            if query.message.caption:
+                await query.edit_message_caption(
+                    query.message.caption + "\n\n❌ <b>Відхилено директором</b>",
+                    parse_mode="HTML"
+                )
+            else:
+                await query.edit_message_text(
+                    query.message.text + "\n\n❌ <b>Відхилено директором</b>",
+                    parse_mode="HTML"
+                )
+        except Exception as e:
+            logger.error(f"edit reject msg error: {e}")
 
+        row_data = ws.row_values(row)
+        manager_name = row_data[10] if len(row_data) > 10 else ""
         data = context.application.bot_data.get(f"repair_{record_id}", {})
-        manager_id = data.get("manager_id")
+        manager_id = data.get("manager_id") or get_manager_id_by_name(manager_name)
         if manager_id:
-            await context.bot.send_message(
-                chat_id=manager_id,
-                text=f"❌ Заявку #{record_id} <b>відхилено директором</b>.",
-                parse_mode="HTML"
-            )
+            try:
+                await context.bot.send_message(
+                    chat_id=manager_id,
+                    text=f"❌ Заявку #{record_id} <b>відхилено директором</b>.",
+                    parse_mode="HTML"
+                )
+            except Exception as e:
+                logger.error(f"notify manager reject error: {e}")
     except Exception as e:
         logger.error(f"director_reject error: {e}")
 
@@ -1201,39 +1308,59 @@ async def accountant_paid(query, context, record_id):
         return
     try:
         ws = get_repairs_sheet()
-        cell = ws.find(str(record_id))
-        ws.update_cell(cell.row, 12, "Оплачено")
-        ws.update_cell(cell.row, 14, datetime.now().strftime("%d.%m.%Y %H:%M"))
+        row = find_repair_row_by_id(ws, record_id)
+        if not row:
+            await query.answer("❌ Заявку не знайдено.", show_alert=True)
+            return
+        ws.update_cell(row, 12, "Оплачено")
+        ws.update_cell(row, 14, datetime.now().strftime("%d.%m.%Y %H:%M"))
 
-        if query.message.caption:
-            await query.edit_message_caption(
-                query.message.caption + "\n\n✅ <b>Оплачено</b>",
-                parse_mode="HTML"
-            )
-        else:
-            await query.edit_message_text(
-                query.message.text + "\n\n✅ <b>Оплачено</b>",
-                parse_mode="HTML"
-            )
+        try:
+            if query.message.caption:
+                await query.edit_message_caption(
+                    query.message.caption + "\n\n✅ <b>Оплачено</b>",
+                    parse_mode="HTML"
+                )
+            else:
+                await query.edit_message_text(
+                    query.message.text + "\n\n✅ <b>Оплачено</b>",
+                    parse_mode="HTML"
+                )
+        except Exception as e:
+            logger.error(f"edit paid msg error: {e}")
+
+        row_data = ws.row_values(row)
+        op_label     = row_data[2] if len(row_data) > 2 else ""
+        amount       = row_data[6] if len(row_data) > 6 else ""
+        manager_name = row_data[10] if len(row_data) > 10 else ""
 
         data = context.application.bot_data.get(f"repair_{record_id}", {})
-        manager_id = data.get("manager_id")
+        manager_id = data.get("manager_id") or get_manager_id_by_name(manager_name)
         if manager_id:
-            await context.bot.send_message(
-                chat_id=manager_id,
-                text=f"✅ Заявку #{record_id} <b>оплачено</b> бухгалтером.",
-                parse_mode="HTML"
-            )
+            try:
+                await context.bot.send_message(
+                    chat_id=manager_id,
+                    text=f"✅ Заявку #{record_id} <b>оплачено</b> бухгалтером.",
+                    parse_mode="HTML"
+                )
+            except Exception as e:
+                logger.error(f"notify manager paid error: {e}")
 
-        op = data.get("op_type", "")
-        if op == "purchase":
+        # Якщо закупка — оновлюємо склад
+        if op_label == "Закупка":
             name  = data.get("stock_name", "")
             qty   = float(data.get("stock_qty", 0) or 0)
             unit  = data.get("stock_unit", "")
-            amount = float(data.get("amount", 0) or 0)
-            price_per_unit = round(amount / qty, 2) if qty else 0
+            try:
+                amount_val = float(str(amount).replace(" ", "").replace(",", ".") or 0)
+            except Exception:
+                amount_val = 0
+            price_per_unit = round(amount_val / qty, 2) if qty else 0
             if name and qty:
-                update_stock(name, unit, qty, price_per_unit)
+                try:
+                    update_stock(name, unit, qty, price_per_unit)
+                except Exception as e:
+                    logger.error(f"update_stock error: {e}")
 
     except Exception as e:
         logger.error(f"accountant_paid error: {e}")
