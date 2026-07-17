@@ -14,18 +14,18 @@ import gspread
 from google.oauth2.service_account import Credentials
 import anthropic
 
-# ══════════════════════════════════════════════
-# НАЛАШТУВАННЯ
-# ══════════════════════════════════════════════
-BOT_TOKEN  = "8882709453:AAHVCxCPx47olI-37XaDuRaSmgu4KbTIsm0"
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
+# РќРђР›РђРЁРўРЈР’РђРќРќРЇ
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
+BOT_TOKEN  = os.environ.get("BOT_TOKEN", "")
 SHEET_ID   = "1Nq-RKRAF16ZOs2gq7RS7IZ5-6PFsxZrNT4MkJ75dJ9U"
 CREDS_FILE = "create-497113-eed86744057e.json"
 
 MANAGER_IDS = [805571381, 692989160, 321443422]
 MANAGER_NAMES = {
-    805571381: "Олександр",
-    692989160: "Виталій",
-    321443422: "О.О.",
+    805571381: "РћР»РµРєСЃР°РЅРґСЂ",
+    692989160: "Р’РёС‚Р°Р»С–Р№",
+    321443422: "Рћ.Рћ.",
 }
 DIRECTOR_ID   = 299617056
 ACCOUNTANT_ID = 5030873843
@@ -35,32 +35,32 @@ SCOPES = [
     "https://www.googleapis.com/auth/drive",
 ]
 
-# Список всіх тягачів
+# РЎРїРёСЃРѕРє РІСЃС–С… С‚СЏРіР°С‡С–РІ
 TRUCKS = [
-    "ВА1254ЕМ","BA1495EM","BA8603EM","ВА2387ЕХ","ВА5684НС",
-    "BA8476EP","AM6937HE","ВА7289НІ","ВА7286НІ","ВА6675НІ",
-    "ВА6678НІ","ВА2049НС","ВА9914ЕТ","BA6468EP","ВА7287НІ",
-    "ВА8467НІ","ВА5952НС","ВА7990ЕН","ВА7954АО","ВА1483ЕО",
-    "BA2187BK","ВА9244ЕН","ВА8712ЕР","KA3566HE",
+    "Р’Рђ1254Р•Рњ","BA1495EM","BA8603EM","Р’Рђ2387Р•РҐ","Р’Рђ5684РќРЎ",
+    "BA8476EP","AM6937HE","Р’Рђ7289РќР†","Р’Рђ7286РќР†","Р’Рђ6675РќР†",
+    "Р’Рђ6678РќР†","Р’Рђ2049РќРЎ","Р’Рђ9914Р•Рў","BA6468EP","Р’Рђ7287РќР†",
+    "Р’Рђ8467РќР†","Р’Рђ5952РќРЎ","Р’Рђ7990Р•Рќ","Р’Рђ7954РђРћ","Р’Рђ1483Р•Рћ",
+    "BA2187BK","Р’Рђ9244Р•Рќ","Р’Рђ8712Р•Р ","KA3566HE",
 ]
 
-# Список всіх цистерн
+# РЎРїРёСЃРѕРє РІСЃС–С… С†РёСЃС‚РµСЂРЅ
 TANKS = [
-    "BA4872XO","AA3677XG","AA3622XG","BХ1209XF","BX0764XF",
-    "BA0583XF","AA5938XG","ВА7565XF","ВА7566XF","ВА7716XF",
-    "ВА7718XF","АA2511XG","AA5942XG","BA0582XF","ВА7567XF",
-    "ВА7719XF","СЕ2735ХР","СЕ2747ХР","ВА4694ХТ","ВА4847ХО",
-    "BA6713XP","ВА4695ХТ","BA4821ХО","ВА5253ХР","ВА4954ХО",
+    "BA4872XO","AA3677XG","AA3622XG","BРҐ1209XF","BX0764XF",
+    "BA0583XF","AA5938XG","Р’Рђ7565XF","Р’Рђ7566XF","Р’Рђ7716XF",
+    "Р’Рђ7718XF","РђA2511XG","AA5942XG","BA0582XF","Р’Рђ7567XF",
+    "Р’Рђ7719XF","РЎР•2735РҐР ","РЎР•2747РҐР ","Р’Рђ4694РҐРў","Р’Рђ4847РҐРћ",
+    "BA6713XP","Р’Рђ4695РҐРў","BA4821РҐРћ","Р’Рђ5253РҐР ","Р’Рђ4954РҐРћ",
 ]
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ══════════════════════════════════════════════
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 # GOOGLE SHEETS
-# ══════════════════════════════════════════════
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 def get_spreadsheet():
-    # Спочатку пробуємо взяти credentials зі змінної середовища (безпечніше)
+    # РЎРїРѕС‡Р°С‚РєСѓ РїСЂРѕР±СѓС”РјРѕ РІР·СЏС‚Рё credentials Р·С– Р·РјС–РЅРЅРѕС— СЃРµСЂРµРґРѕРІРёС‰Р° (Р±РµР·РїРµС‡РЅС–С€Рµ)
     creds_json_env = os.environ.get("GOOGLE_CREDS_JSON")
     if creds_json_env:
         try:
@@ -71,13 +71,12 @@ def get_spreadsheet():
         except Exception as e:
             logger.error(f"GOOGLE_CREDS_JSON parse error: {e}")
 
-    # Інакше шукаємо JSON файл з credentials
+    # Р†РЅР°РєС€Рµ С€СѓРєР°С”РјРѕ JSON С„Р°Р№Р» Р· credentials
     candidates = [
         CREDS_FILE,
         "create-497113-eed86744057e.json..json",
         "create-497113-eed86744057e.json.json",
     ]
-    # Додаємо всі json файли з робочої папки
     try:
         for f in os.listdir("."):
             if f.endswith(".json") and "create-" in f.lower():
@@ -95,7 +94,7 @@ def get_spreadsheet():
     if not creds_path:
         available = [f for f in os.listdir(".") if f.endswith(".json")] if os.path.exists(".") else []
         raise FileNotFoundError(
-            f"Google credentials JSON не знайдено. Доступні JSON: {available}"
+            f"Google credentials JSON РЅРµ Р·РЅР°Р№РґРµРЅРѕ. Р”РѕСЃС‚СѓРїРЅС– JSON: {available}"
         )
 
     creds = Credentials.from_service_account_file(creds_path, scopes=SCOPES)
@@ -113,47 +112,44 @@ def get_or_create_sheet(name, headers):
     return ws
 
 def get_repairs_sheet():
-    return get_or_create_sheet("Ремонти", [
-        "ID", "Дата подачі", "Тип", "Машина", "Тип машини",
-        "Опис робіт / Запчастини", "Сума", "Форма оплати",
-        "СТО / Постачальник", "Номер рахунку", "Менеджер",
-        "Статус", "Дата погодження", "Дата оплати"
+    return get_or_create_sheet("Р РµРјРѕРЅС‚Рё", [
+        "ID", "Р”Р°С‚Р° РїРѕРґР°С‡С–", "РўРёРї", "РњР°С€РёРЅР°", "РўРёРї РјР°С€РёРЅРё",
+        "РћРїРёСЃ СЂРѕР±С–С‚ / Р—Р°РїС‡Р°СЃС‚РёРЅРё", "РЎСѓРјР°", "Р¤РѕСЂРјР° РѕРїР»Р°С‚Рё",
+        "РЎРўРћ / РџРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРє", "РќРѕРјРµСЂ СЂР°С…СѓРЅРєСѓ", "РњРµРЅРµРґР¶РµСЂ",
+        "РЎС‚Р°С‚СѓСЃ", "Р”Р°С‚Р° РїРѕРіРѕРґР¶РµРЅРЅСЏ", "Р”Р°С‚Р° РѕРїР»Р°С‚Рё"
     ])
 
 def get_stock_sheet():
-    return get_or_create_sheet("Склад", [
-        "Позиція", "Одиниця", "Кількість", "Ціна за одиницю",
-        "Загальна вартість", "Дата останнього оновлення"
+    return get_or_create_sheet("РЎРєР»Р°Рґ", [
+        "РџРѕР·РёС†С–СЏ", "РћРґРёРЅРёС†СЏ", "РљС–Р»СЊРєС–СЃС‚СЊ", "Р¦С–РЅР° Р·Р° РѕРґРёРЅРёС†СЋ",
+        "Р—Р°РіР°Р»СЊРЅР° РІР°СЂС‚С–СЃС‚СЊ", "Р”Р°С‚Р° РѕСЃС‚Р°РЅРЅСЊРѕРіРѕ РѕРЅРѕРІР»РµРЅРЅСЏ"
     ])
 
 def get_movements_sheet():
-    return get_or_create_sheet("Рух складу", [
-        "ID", "Дата", "Тип", "Позиція", "Кількість",
-        "Машина", "Менеджер", "Статус", "Примітка"
+    return get_or_create_sheet("Р СѓС… СЃРєР»Р°РґСѓ", [
+        "ID", "Р”Р°С‚Р°", "РўРёРї", "РџРѕР·РёС†С–СЏ", "РљС–Р»СЊРєС–СЃС‚СЊ",
+        "РњР°С€РёРЅР°", "РњРµРЅРµРґР¶РµСЂ", "РЎС‚Р°С‚СѓСЃ", "РџСЂРёРјС–С‚РєР°"
     ])
 
-# ══════════════════════════════════════════════
-# СКЛАД - ЛОГІКА
-# ══════════════════════════════════════════════
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
+# РЎРљР›РђР” - Р›РћР“Р†РљРђ
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 def get_stock_items():
-    """Повертає список позицій на складі."""
     ws = get_stock_sheet()
     records = ws.get_all_records()
-    return [r for r in records if r.get("Кількість", 0)]
+    return [r for r in records if r.get("РљС–Р»СЊРєС–СЃС‚СЊ", 0)]
 
 def update_stock(position, unit, quantity_delta, price_per_unit=0):
-    """Оновлює залишок на складі. quantity_delta > 0 = прихід, < 0 = списання."""
     ws = get_stock_sheet()
     records = ws.get_all_records()
     for i, r in enumerate(records, start=2):
-        if r.get("Позиція", "").lower() == position.lower():
-            new_qty = float(r.get("Кількість", 0)) + quantity_delta
-            new_total = new_qty * float(r.get("Ціна за одиницю", price_per_unit) or price_per_unit)
+        if r.get("РџРѕР·РёС†С–СЏ", "").lower() == position.lower():
+            new_qty = float(r.get("РљС–Р»СЊРєС–СЃС‚СЊ", 0)) + quantity_delta
+            new_total = new_qty * float(r.get("Р¦С–РЅР° Р·Р° РѕРґРёРЅРёС†СЋ", price_per_unit) or price_per_unit)
             ws.update_cell(i, 3, round(new_qty, 3))
             ws.update_cell(i, 5, round(new_total, 2))
             ws.update_cell(i, 6, datetime.now().strftime("%d.%m.%Y"))
             return True
-    # Нова позиція
     if quantity_delta > 0:
         total = quantity_delta * price_per_unit
         ws.append_row([
@@ -163,41 +159,40 @@ def update_stock(position, unit, quantity_delta, price_per_unit=0):
         ])
     return True
 
-# ══════════════════════════════════════════════
-# AI РОЗПІЗНАВАННЯ
-# ══════════════════════════════════════════════
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
+# AI Р РћР—РџР†Р—РќРђР’РђРќРќРЇ
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 async def recognize_document(file_content: bytes, mime_type: str, is_pdf: bool = False) -> dict:
-    """Розпізнає рахунок через Claude AI."""
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     client = anthropic.Anthropic(api_key=api_key)
 
     trucks_str = ", ".join(TRUCKS)
     tanks_str  = ", ".join(TANKS)
 
-    prompt = f"""Ти аналізуєш рахунок-фактуру від СТО або постачальника товарів/послуг.
+    prompt = f"""РўРё Р°РЅР°Р»С–Р·СѓС”С€ СЂР°С…СѓРЅРѕРє-С„Р°РєС‚СѓСЂСѓ РІС–Рґ РЎРўРћ Р°Р±Рѕ РїРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРєР° С‚РѕРІР°СЂС–РІ/РїРѕСЃР»СѓРі.
 
-Список тягачів компанії: {trucks_str}
-Список цистерн компанії: {tanks_str}
+РЎРїРёСЃРѕРє С‚СЏРіР°С‡С–РІ РєРѕРјРїР°РЅС–С—: {trucks_str}
+РЎРїРёСЃРѕРє С†РёСЃС‚РµСЂРЅ РєРѕРјРїР°РЅС–С—: {tanks_str}
 
-ВАЖЛИВО про постачальника:
-- Постачальник (contractor) — це ПРОДАВЕЦЬ, той хто ВИСТАВИВ рахунок і надав послуги/товари.
-- В рахунку це поле зазвичай позначене як "Постачальник", "Продавець", "Виконавець", "Виконавець послуг".
-- Наша компанія "ПП Транзит-Траст" (або "Транзит-Траст") є ПОКУПЦЕМ / ЗАМОВНИКОМ — її НЕ треба вказувати як постачальника!
-- Якщо в рахунку вказано "Покупець: Транзит-Траст" — це наша компанія, ігноруй її.
-- Шукай саме того, ХТО ВИСТАВИВ рахунок (зазвичай зверху документу або в полі "Постачальник").
+Р’РђР–Р›РР’Рћ РїСЂРѕ РїРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРєР°:
+- РџРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРє (contractor) вЂ” С†Рµ РџР РћР”РђР’Р•Р¦Р¬, С‚РѕР№ С…С‚Рѕ Р’РРЎРўРђР’РР’ СЂР°С…СѓРЅРѕРє С– РЅР°РґР°РІ РїРѕСЃР»СѓРіРё/С‚РѕРІР°СЂРё.
+- Р’ СЂР°С…СѓРЅРєСѓ С†Рµ РїРѕР»Рµ Р·Р°Р·РІРёС‡Р°Р№ РїРѕР·РЅР°С‡РµРЅРµ СЏРє "РџРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРє", "РџСЂРѕРґР°РІРµС†СЊ", "Р’РёРєРѕРЅР°РІРµС†СЊ", "Р’РёРєРѕРЅР°РІРµС†СЊ РїРѕСЃР»СѓРі".
+- РќР°С€Р° РєРѕРјРїР°РЅС–СЏ "РџРџ РўСЂР°РЅР·РёС‚-РўСЂР°СЃС‚" (Р°Р±Рѕ "РўСЂР°РЅР·РёС‚-РўСЂР°СЃС‚") С” РџРћРљРЈРџР¦Р•Рњ / Р—РђРњРћР’РќРРљРћРњ вЂ” С—С— РќР• С‚СЂРµР±Р° РІРєР°Р·СѓРІР°С‚Рё СЏРє РїРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРєР°!
+- РЇРєС‰Рѕ РІ СЂР°С…СѓРЅРєСѓ РІРєР°Р·Р°РЅРѕ "РџРѕРєСѓРїРµС†СЊ: РўСЂР°РЅР·РёС‚-РўСЂР°СЃС‚" вЂ” С†Рµ РЅР°С€Р° РєРѕРјРїР°РЅС–СЏ, С–РіРЅРѕСЂСѓР№ С—С—.
+- РЁСѓРєР°Р№ СЃР°РјРµ С‚РѕРіРѕ, РҐРўРћ Р’РРЎРўРђР’РР’ СЂР°С…СѓРЅРѕРє (Р·Р°Р·РІРёС‡Р°Р№ Р·РІРµСЂС…Сѓ РґРѕРєСѓРјРµРЅС‚Сѓ Р°Р±Рѕ РІ РїРѕР»С– "РџРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРє").
 
-Витягни з документа наступну інформацію у JSON:
-- date: дата рахунку (формат ДД.ММ.РРРР)
-- vehicle: номер машини зі списку вище (якщо знайдено, точно як у списку)
-- vehicle_type: "тягач" або "цистерна" (визначи за номером)
-- description: опис робіт або перелік запчастин (коротко)
-- amount: сума (тільки число)
-- payment_type: "безнал" або "готівка"
-- contractor: назва ПОСТАЧАЛЬНИКА/ПРОДАВЦЯ (НЕ покупця, НЕ нашої компанії Транзит-Траст!)
-- invoice_number: номер рахунку або документу
+Р’РёС‚СЏРіРЅРё Р· РґРѕРєСѓРјРµРЅС‚Р° РЅР°СЃС‚СѓРїРЅСѓ С–РЅС„РѕСЂРјР°С†С–СЋ Сѓ JSON:
+- date: РґР°С‚Р° СЂР°С…СѓРЅРєСѓ (С„РѕСЂРјР°С‚ Р”Р”.РњРњ.Р Р Р Р )
+- vehicle: РЅРѕРјРµСЂ РјР°С€РёРЅРё Р·С– СЃРїРёСЃРєСѓ РІРёС‰Рµ (СЏРєС‰Рѕ Р·РЅР°Р№РґРµРЅРѕ, С‚РѕС‡РЅРѕ СЏРє Сѓ СЃРїРёСЃРєСѓ)
+- vehicle_type: "С‚СЏРіР°С‡" Р°Р±Рѕ "С†РёСЃС‚РµСЂРЅР°" (РІРёР·РЅР°С‡Рё Р·Р° РЅРѕРјРµСЂРѕРј)
+- description: РѕРїРёСЃ СЂРѕР±С–С‚ Р°Р±Рѕ РїРµСЂРµР»С–Рє Р·Р°РїС‡Р°СЃС‚РёРЅ (РєРѕСЂРѕС‚РєРѕ)
+- amount: СЃСѓРјР° (С‚С–Р»СЊРєРё С‡РёСЃР»Рѕ)
+- payment_type: "Р±РµР·РЅР°Р»" Р°Р±Рѕ "РіРѕС‚С–РІРєР°"
+- contractor: РЅР°Р·РІР° РџРћРЎРўРђР§РђР›Р¬РќРРљРђ/РџР РћР”РђР’Р¦РЇ (РќР• РїРѕРєСѓРїС†СЏ, РќР• РЅР°С€РѕС— РєРѕРјРїР°РЅС–С— РўСЂР°РЅР·РёС‚-РўСЂР°СЃС‚!)
+- invoice_number: РЅРѕРјРµСЂ СЂР°С…СѓРЅРєСѓ Р°Р±Рѕ РґРѕРєСѓРјРµРЅС‚Сѓ
 
-Якщо якесь поле не знайдено — встав null.
-Відповідай ТІЛЬКИ JSON без жодного іншого тексту."""
+РЇРєС‰Рѕ СЏРєРµСЃСЊ РїРѕР»Рµ РЅРµ Р·РЅР°Р№РґРµРЅРѕ вЂ” РІСЃС‚Р°РІ null.
+Р’С–РґРїРѕРІС–РґР°Р№ РўР†Р›Р¬РљР JSON Р±РµР· Р¶РѕРґРЅРѕРіРѕ С–РЅС€РѕРіРѕ С‚РµРєСЃС‚Сѓ."""
 
     import base64
     b64 = base64.b64encode(file_content).decode()
@@ -225,41 +220,40 @@ async def recognize_document(file_content: bytes, mime_type: str, is_pdf: bool =
 
 
 async def recognize_text_with_ai(text_content: str) -> dict:
-    """Розпізнає рахунок з тексту (для Excel) через Claude AI."""
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     client = anthropic.Anthropic(api_key=api_key)
 
     trucks_str = ", ".join(TRUCKS)
     tanks_str  = ", ".join(TANKS)
 
-    prompt = f"""Ти аналізуєш текст рахунку-фактури, витягнутий з Excel таблиці.
+    prompt = f"""РўРё Р°РЅР°Р»С–Р·СѓС”С€ С‚РµРєСЃС‚ СЂР°С…СѓРЅРєСѓ-С„Р°РєС‚СѓСЂРё, РІРёС‚СЏРіРЅСѓС‚РёР№ Р· Excel С‚Р°Р±Р»РёС†С–.
 
-Список тягачів компанії: {trucks_str}
-Список цистерн компанії: {tanks_str}
+РЎРїРёСЃРѕРє С‚СЏРіР°С‡С–РІ РєРѕРјРїР°РЅС–С—: {trucks_str}
+РЎРїРёСЃРѕРє С†РёСЃС‚РµСЂРЅ РєРѕРјРїР°РЅС–С—: {tanks_str}
 
-ВАЖЛИВО про постачальника:
-- Постачальник (contractor) — це ПРОДАВЕЦЬ, той хто ВИСТАВИВ рахунок і надав послуги/товари.
-- В рахунку це поле зазвичай позначене як "Постачальник", "Продавець", "Виконавець".
-- Наша компанія "ПП Транзит-Траст" (або "Транзит-Траст") є ПОКУПЦЕМ — її НЕ треба вказувати як постачальника!
-- Якщо в тексті є "Покупець: Транзит-Траст" — це наша компанія, ігноруй її.
+Р’РђР–Р›РР’Рћ РїСЂРѕ РїРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРєР°:
+- РџРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРє (contractor) вЂ” С†Рµ РџР РћР”РђР’Р•Р¦Р¬, С‚РѕР№ С…С‚Рѕ Р’РРЎРўРђР’РР’ СЂР°С…СѓРЅРѕРє С– РЅР°РґР°РІ РїРѕСЃР»СѓРіРё/С‚РѕРІР°СЂРё.
+- Р’ СЂР°С…СѓРЅРєСѓ С†Рµ РїРѕР»Рµ Р·Р°Р·РІРёС‡Р°Р№ РїРѕР·РЅР°С‡РµРЅРµ СЏРє "РџРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРє", "РџСЂРѕРґР°РІРµС†СЊ", "Р’РёРєРѕРЅР°РІРµС†СЊ".
+- РќР°С€Р° РєРѕРјРїР°РЅС–СЏ "РџРџ РўСЂР°РЅР·РёС‚-РўСЂР°СЃС‚" (Р°Р±Рѕ "РўСЂР°РЅР·РёС‚-РўСЂР°СЃС‚") С” РџРћРљРЈРџР¦Р•Рњ вЂ” С—С— РќР• С‚СЂРµР±Р° РІРєР°Р·СѓРІР°С‚Рё СЏРє РїРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРєР°!
+- РЇРєС‰Рѕ РІ С‚РµРєСЃС‚С– С” "РџРѕРєСѓРїРµС†СЊ: РўСЂР°РЅР·РёС‚-РўСЂР°СЃС‚" вЂ” С†Рµ РЅР°С€Р° РєРѕРјРїР°РЅС–СЏ, С–РіРЅРѕСЂСѓР№ С—С—.
 
-Текст рахунку:
+РўРµРєСЃС‚ СЂР°С…СѓРЅРєСѓ:
 ---
 {text_content[:8000]}
 ---
 
-Витягни наступну інформацію у JSON:
-- date: дата рахунку (формат ДД.ММ.РРРР)
-- vehicle: номер машини зі списку вище (якщо знайдено, точно як у списку)
-- vehicle_type: "тягач" або "цистерна"
-- description: опис робіт або перелік позицій (коротко, до 100 символів)
-- amount: сума загальна (тільки число, без пробілів)
-- payment_type: "безнал" або "готівка"
-- contractor: назва ПОСТАЧАЛЬНИКА (НЕ Транзит-Траст!)
-- invoice_number: номер рахунку
+Р’РёС‚СЏРіРЅРё РЅР°СЃС‚СѓРїРЅСѓ С–РЅС„РѕСЂРјР°С†С–СЋ Сѓ JSON:
+- date: РґР°С‚Р° СЂР°С…СѓРЅРєСѓ (С„РѕСЂРјР°С‚ Р”Р”.РњРњ.Р Р Р Р )
+- vehicle: РЅРѕРјРµСЂ РјР°С€РёРЅРё Р·С– СЃРїРёСЃРєСѓ РІРёС‰Рµ (СЏРєС‰Рѕ Р·РЅР°Р№РґРµРЅРѕ, С‚РѕС‡РЅРѕ СЏРє Сѓ СЃРїРёСЃРєСѓ)
+- vehicle_type: "С‚СЏРіР°С‡" Р°Р±Рѕ "С†РёСЃС‚РµСЂРЅР°"
+- description: РѕРїРёСЃ СЂРѕР±С–С‚ Р°Р±Рѕ РїРµСЂРµР»С–Рє РїРѕР·РёС†С–Р№ (РєРѕСЂРѕС‚РєРѕ, РґРѕ 100 СЃРёРјРІРѕР»С–РІ)
+- amount: СЃСѓРјР° Р·Р°РіР°Р»СЊРЅР° (С‚С–Р»СЊРєРё С‡РёСЃР»Рѕ, Р±РµР· РїСЂРѕР±С–Р»С–РІ)
+- payment_type: "Р±РµР·РЅР°Р»" Р°Р±Рѕ "РіРѕС‚С–РІРєР°"
+- contractor: РЅР°Р·РІР° РџРћРЎРўРђР§РђР›Р¬РќРРљРђ (РќР• РўСЂР°РЅР·РёС‚-РўСЂР°СЃС‚!)
+- invoice_number: РЅРѕРјРµСЂ СЂР°С…СѓРЅРєСѓ
 
-Якщо якесь поле не знайдено — встав null.
-Відповідай ТІЛЬКИ JSON без жодного іншого тексту."""
+РЇРєС‰Рѕ СЏРєРµСЃСЊ РїРѕР»Рµ РЅРµ Р·РЅР°Р№РґРµРЅРѕ вЂ” РІСЃС‚Р°РІ null.
+Р’С–РґРїРѕРІС–РґР°Р№ РўР†Р›Р¬РљР JSON Р±РµР· Р¶РѕРґРЅРѕРіРѕ С–РЅС€РѕРіРѕ С‚РµРєСЃС‚Сѓ."""
 
     response = client.messages.create(
         model="claude-sonnet-4-5",
@@ -271,22 +265,22 @@ async def recognize_text_with_ai(text_content: str) -> dict:
     result_text = re.sub(r'^```json\s*|\s*```$', '', result_text)
     return json.loads(result_text)
 
-# ══════════════════════════════════════════════
-# ГОЛОВНЕ МЕНЮ
-# ══════════════════════════════════════════════
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
+# Р“РћР›РћР’РќР• РњР•РќР®
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id not in MANAGER_IDS:
-        await update.message.reply_text("⛔ Доступ заборонено.")
+        await update.message.reply_text("в›” Р”РѕСЃС‚СѓРї Р·Р°Р±РѕСЂРѕРЅРµРЅРѕ.")
         return
     await show_main_menu(update, context)
 
 async def show_main_menu(update, context):
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔧 Ремонт", callback_data="menu_repair")],
-        [InlineKeyboardButton("📥 Закупка на склад", callback_data="menu_purchase")],
-        [InlineKeyboardButton("📤 Списання зі складу", callback_data="menu_writeoff")],
+        [InlineKeyboardButton("рџ”§ Р РµРјРѕРЅС‚", callback_data="menu_repair")],
+        [InlineKeyboardButton("рџ“Ґ Р—Р°РєСѓРїРєР° РЅР° СЃРєР»Р°Рґ", callback_data="menu_purchase")],
+        [InlineKeyboardButton("рџ“¤ РЎРїРёСЃР°РЅРЅСЏ Р·С– СЃРєР»Р°РґСѓ", callback_data="menu_writeoff")],
     ])
-    text = "Що додаємо?\n\nОберіть тип операції:"
+    text = "Р©Рѕ РґРѕРґР°С”РјРѕ?\n\nРћР±РµСЂС–С‚СЊ С‚РёРї РѕРїРµСЂР°С†С–С—:"
     if update.callback_query:
         await update.callback_query.edit_message_text(text, reply_markup=keyboard)
     else:
@@ -298,34 +292,32 @@ async def new_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data.clear()
     await show_main_menu(update, context)
 
-# ══════════════════════════════════════════════
-# ОБРОБКА CALLBACK
-# ══════════════════════════════════════════════
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
+# РћР‘Р РћР‘РљРђ CALLBACK
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     data = query.data
-    user = query.from_user
 
-    # ── ГОЛОВНЕ МЕНЮ ──
     if data == "menu_repair":
         context.user_data["op_type"] = "repair"
         keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("💵 Готівка (вручну)", callback_data="pay_cash")],
-            [InlineKeyboardButton("🏦 Безнал (рахунок/фото)", callback_data="pay_invoice")],
-            [InlineKeyboardButton("◀️ Назад", callback_data="back_main")],
+            [InlineKeyboardButton("рџ’µ Р“РѕС‚С–РІРєР° (РІСЂСѓС‡РЅСѓ)", callback_data="pay_cash")],
+            [InlineKeyboardButton("рџЏ¦ Р‘РµР·РЅР°Р» (СЂР°С…СѓРЅРѕРє/С„РѕС‚Рѕ)", callback_data="pay_invoice")],
+            [InlineKeyboardButton("в—ЂпёЏ РќР°Р·Р°Рґ", callback_data="back_main")],
         ])
-        await query.edit_message_text("🔧 Ремонт\n\nСпосіб оплати:", reply_markup=keyboard)
+        await query.edit_message_text("рџ”§ Р РµРјРѕРЅС‚\n\nРЎРїРѕСЃС–Р± РѕРїР»Р°С‚Рё:", reply_markup=keyboard)
         return
 
     if data == "menu_purchase":
         context.user_data["op_type"] = "purchase"
         keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("💵 Готівка (вручну)", callback_data="pay_cash")],
-            [InlineKeyboardButton("🏦 Безнал (рахунок/фото)", callback_data="pay_invoice")],
-            [InlineKeyboardButton("◀️ Назад", callback_data="back_main")],
+            [InlineKeyboardButton("рџ’µ Р“РѕС‚С–РІРєР° (РІСЂСѓС‡РЅСѓ)", callback_data="pay_cash")],
+            [InlineKeyboardButton("рџЏ¦ Р‘РµР·РЅР°Р» (СЂР°С…СѓРЅРѕРє/С„РѕС‚Рѕ)", callback_data="pay_invoice")],
+            [InlineKeyboardButton("в—ЂпёЏ РќР°Р·Р°Рґ", callback_data="back_main")],
         ])
-        await query.edit_message_text("📥 Закупка на склад\n\nСпосіб оплати:", reply_markup=keyboard)
+        await query.edit_message_text("рџ“Ґ Р—Р°РєСѓРїРєР° РЅР° СЃРєР»Р°Рґ\n\nРЎРїРѕСЃС–Р± РѕРїР»Р°С‚Рё:", reply_markup=keyboard)
         return
 
     if data == "menu_writeoff":
@@ -338,47 +330,45 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await show_main_menu(update, context)
         return
 
-    # ── СПОСІБ ОПЛАТИ ──
     if data == "pay_cash":
-        context.user_data["payment"] = "готівка"
+        context.user_data["payment"] = "РіРѕС‚С–РІРєР°"
         op = context.user_data.get("op_type")
         if op == "repair":
             await ask_vehicle(query, context)
         else:
             context.user_data["step"] = "manual_purchase"
             await query.edit_message_text(
-                "📥 Введіть дані закупки в один рядок:\n\n"
-                "<code>Назва позиції, кількість, одиниця, сума, постачальник</code>\n\n"
-                "Приклад:\n"
-                "<code>Масло моторне 5W-40, 200, л, 50000, Укрнафта</code>",
+                "рџ“Ґ Р’РІРµРґС–С‚СЊ РґР°РЅС– Р·Р°РєСѓРїРєРё РІ РѕРґРёРЅ СЂСЏРґРѕРє:\n\n"
+                "<code>РќР°Р·РІР° РїРѕР·РёС†С–С—, РєС–Р»СЊРєС–СЃС‚СЊ, РѕРґРёРЅРёС†СЏ, СЃСѓРјР°, РїРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРє</code>\n\n"
+                "РџСЂРёРєР»Р°Рґ:\n"
+                "<code>РњР°СЃР»Рѕ РјРѕС‚РѕСЂРЅРµ 5W-40, 200, Р», 50000, РЈРєСЂРЅР°С„С‚Р°</code>",
                 parse_mode="HTML"
             )
         return
 
     if data == "pay_invoice":
-        context.user_data["payment"] = "безнал"
+        context.user_data["payment"] = "Р±РµР·РЅР°Р»"
         context.user_data["step"] = "awaiting_file"
         await query.edit_message_text(
-            "📎 Надішліть рахунок:\n\n"
-            "• PDF файл\n"
-            "• Фото рахунку\n"
-            "• Скан документу\n\n"
-            "AI розпізнає дані автоматично."
+            "рџ“Ћ РќР°РґС–С€Р»С–С‚СЊ СЂР°С…СѓРЅРѕРє:\n\n"
+            "вЂў PDF С„Р°Р№Р»\n"
+            "вЂў Р¤РѕС‚Рѕ СЂР°С…СѓРЅРєСѓ\n"
+            "вЂў РЎРєР°РЅ РґРѕРєСѓРјРµРЅС‚Сѓ\n\n"
+            "AI СЂРѕР·РїС–Р·РЅР°С” РґР°РЅС– Р°РІС‚РѕРјР°С‚РёС‡РЅРѕ."
         )
         return
 
-    # ── ВИБІР МАШИНИ ──
     if data.startswith("truck_"):
         vehicle = data[6:]
         context.user_data["vehicle"] = vehicle
-        context.user_data["vehicle_type"] = "тягач"
+        context.user_data["vehicle_type"] = "С‚СЏРіР°С‡"
         await ask_manual_repair(query, context)
         return
 
     if data.startswith("tank_"):
         vehicle = data[5:]
         context.user_data["vehicle"] = vehicle
-        context.user_data["vehicle_type"] = "цистерна"
+        context.user_data["vehicle_type"] = "С†РёСЃС‚РµСЂРЅР°"
         await ask_manual_repair(query, context)
         return
 
@@ -395,7 +385,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await show_vehicle_selection(query, context, vtype, int(page))
         return
 
-    # ── ВИБІР ПОЗИЦІЇ ЗІ СКЛАДУ (СПИСАННЯ) ──
     if data.startswith("stock_item_"):
         item_idx = int(data[11:])
         items = get_stock_items()
@@ -404,38 +393,35 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             context.user_data["stock_item"] = item
             context.user_data["step"] = "writeoff_qty"
             await query.edit_message_text(
-                f"📤 Списання: <b>{item['Позиція']}</b>\n"
-                f"На складі: {item['Кількість']} {item['Одиниця']}\n\n"
-                f"Введіть кількість для списання:",
+                f"рџ“¤ РЎРїРёСЃР°РЅРЅСЏ: <b>{item['РџРѕР·РёС†С–СЏ']}</b>\n"
+                f"РќР° СЃРєР»Р°РґС–: {item['РљС–Р»СЊРєС–СЃС‚СЊ']} {item['РћРґРёРЅРёС†СЏ']}\n\n"
+                f"Р’РІРµРґС–С‚СЊ РєС–Р»СЊРєС–СЃС‚СЊ РґР»СЏ СЃРїРёСЃР°РЅРЅСЏ:",
                 parse_mode="HTML"
             )
         return
 
-    # ── ПІДТВЕРДЖЕННЯ ДАНИХ ──
     if data == "confirm_data":
         await submit_for_approval(query, context)
         return
 
     if data == "edit_data":
-        # Показуємо меню вибору поля для редагування
         await show_edit_menu(query, context)
         return
 
-    # ── РЕДАГУВАННЯ ОКРЕМИХ ПОЛІВ ──
     if data.startswith("edit_field_"):
         field = data[11:]
         context.user_data["editing_field"] = field
         context.user_data["step"] = "editing_field"
         field_labels = {
-            "vehicle": "🚗 машину (введіть номер, наприклад BA2187BK)",
-            "description": "📝 опис робіт / запчастин",
-            "amount": "💰 суму (тільки число)",
-            "contractor": "🏪 постачальника / СТО",
-            "date": "📅 дату (формат ДД.ММ.РРРР)",
-            "invoice": "🔢 номер рахунку",
+            "vehicle": "рџљ— РјР°С€РёРЅСѓ (РІРІРµРґС–С‚СЊ РЅРѕРјРµСЂ, РЅР°РїСЂРёРєР»Р°Рґ BA2187BK)",
+            "description": "рџ“ќ РѕРїРёСЃ СЂРѕР±С–С‚ / Р·Р°РїС‡Р°СЃС‚РёРЅ",
+            "amount": "рџ’° СЃСѓРјСѓ (С‚С–Р»СЊРєРё С‡РёСЃР»Рѕ)",
+            "contractor": "рџЏЄ РїРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРєР° / РЎРўРћ",
+            "date": "рџ“… РґР°С‚Сѓ (С„РѕСЂРјР°С‚ Р”Р”.РњРњ.Р Р Р Р )",
+            "invoice": "рџ”ў РЅРѕРјРµСЂ СЂР°С…СѓРЅРєСѓ",
         }
         await query.edit_message_text(
-            f"Введіть нове значення для поля {field_labels.get(field, field)}:"
+            f"Р’РІРµРґС–С‚СЊ РЅРѕРІРµ Р·РЅР°С‡РµРЅРЅСЏ РґР»СЏ РїРѕР»СЏ {field_labels.get(field, field)}:"
         )
         return
 
@@ -443,7 +429,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await ask_manual_repair(query, context)
         return
 
-    # ── ПОГОДЖЕННЯ ДИРЕКТОРА ──
     if data.startswith("director_approve_"):
         record_id = int(data[17:])
         await director_approve(query, context, record_id)
@@ -454,24 +439,22 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await director_reject(query, context, record_id)
         return
 
-    # ── ПІДТВЕРДЖЕННЯ БУХГАЛТЕРА ──
     if data.startswith("accountant_paid_"):
         record_id = int(data[16:])
         await accountant_paid(query, context, record_id)
         return
 
-    # ── СПИСАННЯ: вибір машини ──
     if data.startswith("wo_truck_"):
         vehicle = data[9:]
         context.user_data["vehicle"] = vehicle
-        context.user_data["vehicle_type"] = "тягач"
+        context.user_data["vehicle_type"] = "С‚СЏРіР°С‡"
         await submit_writeoff(query, context)
         return
 
     if data.startswith("wo_tank_"):
         vehicle = data[8:]
         context.user_data["vehicle"] = vehicle
-        context.user_data["vehicle_type"] = "цистерна"
+        context.user_data["vehicle_type"] = "С†РёСЃС‚РµСЂРЅР°"
         await submit_writeoff(query, context)
         return
 
@@ -489,19 +472,19 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
 
-# ══════════════════════════════════════════════
-# ВИБІР МАШИНИ
-# ══════════════════════════════════════════════
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
+# Р’РР‘Р†Р  РњРђРЁРРќР
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 async def ask_vehicle(query, context):
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🚛 Тягач", callback_data="vehicle_page_trucks")],
-        [InlineKeyboardButton("🛢 Цистерна", callback_data="vehicle_page_tanks")],
-        [InlineKeyboardButton("◀️ Назад", callback_data="back_main")],
+        [InlineKeyboardButton("рџљ› РўСЏРіР°С‡", callback_data="vehicle_page_trucks")],
+        [InlineKeyboardButton("рџ›ў Р¦РёСЃС‚РµСЂРЅР°", callback_data="vehicle_page_tanks")],
+        [InlineKeyboardButton("в—ЂпёЏ РќР°Р·Р°Рґ", callback_data="back_main")],
     ])
     op = context.user_data.get("op_type", "")
-    op_label = "🔧 Ремонт" if op == "repair" else "📥 Закупка"
+    op_label = "рџ”§ Р РµРјРѕРЅС‚" if op == "repair" else "рџ“Ґ Р—Р°РєСѓРїРєР°"
     await query.edit_message_text(
-        f"{op_label}\n\nОберіть тип транспорту:",
+        f"{op_label}\n\nРћР±РµСЂС–С‚СЊ С‚РёРї С‚СЂР°РЅСЃРїРѕСЂС‚Сѓ:",
         reply_markup=keyboard
     )
 
@@ -522,54 +505,54 @@ async def show_vehicle_selection(query, context, vtype, page):
 
     nav = []
     if page > 0:
-        nav.append(InlineKeyboardButton("◀️", callback_data=f"vpage_{vtype}_{page-1}"))
+        nav.append(InlineKeyboardButton("в—ЂпёЏ", callback_data=f"vpage_{vtype}_{page-1}"))
     if end < len(items):
-        nav.append(InlineKeyboardButton("▶️", callback_data=f"vpage_{vtype}_{page+1}"))
+        nav.append(InlineKeyboardButton("в–¶пёЏ", callback_data=f"vpage_{vtype}_{page+1}"))
     if nav:
         rows.append(nav)
 
     other = "tanks" if vtype == "trucks" else "trucks"
-    other_label = "🛢 Цистерни" if vtype == "trucks" else "🚛 Тягачі"
-    rows.append([InlineKeyboardButton(f"↩️ {other_label}", callback_data=f"vehicle_page_{other}")])
+    other_label = "рџ›ў Р¦РёСЃС‚РµСЂРЅРё" if vtype == "trucks" else "рџљ› РўСЏРіР°С‡С–"
+    rows.append([InlineKeyboardButton(f"в†©пёЏ {other_label}", callback_data=f"vehicle_page_{other}")])
 
-    label = "Тягачі" if vtype == "trucks" else "Цистерни"
+    label = "РўСЏРіР°С‡С–" if vtype == "trucks" else "Р¦РёСЃС‚РµСЂРЅРё"
     await query.edit_message_text(
-        f"Оберіть {label} ({start+1}-{end} з {len(items)}):",
+        f"РћР±РµСЂС–С‚СЊ {label} ({start+1}-{end} Р· {len(items)}):",
         reply_markup=InlineKeyboardMarkup(rows)
     )
 
 async def ask_manual_repair(query, context):
     vehicle = context.user_data.get("vehicle", "")
     vtype   = context.user_data.get("vehicle_type", "")
-    payment = context.user_data.get("payment", "готівка")
+    payment = context.user_data.get("payment", "РіРѕС‚С–РІРєР°")
     op      = context.user_data.get("op_type", "repair")
 
     context.user_data["step"] = "manual_input"
 
     if op == "repair":
         await query.edit_message_text(
-            f"🔧 Ремонт — {vtype} {vehicle}\n"
-            f"Оплата: {payment}\n\n"
-            f"Введіть дані в одному повідомленні:\n\n"
-            f"<code>Опис робіт, сума, СТО, номер рахунку (якщо є)</code>\n\n"
-            f"Приклад:\n"
-            f"<code>Заміна гальмівних колодок, 8500, СТО Автомайстер, рах.128</code>",
+            f"рџ”§ Р РµРјРѕРЅС‚ вЂ” {vtype} {vehicle}\n"
+            f"РћРїР»Р°С‚Р°: {payment}\n\n"
+            f"Р’РІРµРґС–С‚СЊ РґР°РЅС– РІ РѕРґРЅРѕРјСѓ РїРѕРІС–РґРѕРјР»РµРЅРЅС–:\n\n"
+            f"<code>РћРїРёСЃ СЂРѕР±С–С‚, СЃСѓРјР°, РЎРўРћ, РЅРѕРјРµСЂ СЂР°С…СѓРЅРєСѓ (СЏРєС‰Рѕ С”)</code>\n\n"
+            f"РџСЂРёРєР»Р°Рґ:\n"
+            f"<code>Р—Р°РјС–РЅР° РіР°Р»СЊРјС–РІРЅРёС… РєРѕР»РѕРґРѕРє, 8500, РЎРўРћ РђРІС‚РѕРјР°Р№СЃС‚РµСЂ, СЂР°С….128</code>",
             parse_mode="HTML"
         )
     else:
         await query.edit_message_text(
-            f"📥 Закупка — {vtype} {vehicle}\n"
-            f"Оплата: {payment}\n\n"
-            f"Введіть дані:\n\n"
-            f"<code>Назва, кількість, одиниця, сума, постачальник</code>\n\n"
-            f"Приклад:\n"
-            f"<code>Фільтр оливи, 12, шт, 3600, Автозапчастини</code>",
+            f"рџ“Ґ Р—Р°РєСѓРїРєР° вЂ” {vtype} {vehicle}\n"
+            f"РћРїР»Р°С‚Р°: {payment}\n\n"
+            f"Р’РІРµРґС–С‚СЊ РґР°РЅС–:\n\n"
+            f"<code>РќР°Р·РІР°, РєС–Р»СЊРєС–СЃС‚СЊ, РѕРґРёРЅРёС†СЏ, СЃСѓРјР°, РїРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРє</code>\n\n"
+            f"РџСЂРёРєР»Р°Рґ:\n"
+            f"<code>Р¤С–Р»СЊС‚СЂ РѕР»РёРІРё, 12, С€С‚, 3600, РђРІС‚РѕР·Р°РїС‡Р°СЃС‚РёРЅРё</code>",
             parse_mode="HTML"
         )
 
-# ══════════════════════════════════════════════
-# ВИБІР ПОЗИЦІЇ ЗІ СКЛАДУ
-# ══════════════════════════════════════════════
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
+# Р’РР‘Р†Р  РџРћР—РР¦Р†Р‡ Р—Р† РЎРљР›РђР”РЈ
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 async def show_stock_selection(query, context):
     try:
         items = get_stock_items()
@@ -578,19 +561,19 @@ async def show_stock_selection(query, context):
 
     if not items:
         await query.edit_message_text(
-            "📦 Склад порожній.\n\n"
-            "Спочатку зробіть закупку через 📥 Закупка на склад."
+            "рџ“¦ РЎРєР»Р°Рґ РїРѕСЂРѕР¶РЅС–Р№.\n\n"
+            "РЎРїРѕС‡Р°С‚РєСѓ Р·СЂРѕР±С–С‚СЊ Р·Р°РєСѓРїРєСѓ С‡РµСЂРµР· рџ“Ґ Р—Р°РєСѓРїРєР° РЅР° СЃРєР»Р°Рґ."
         )
         return
 
     rows = []
     for i, item in enumerate(items[:10]):
-        label = f"{item['Позиція']} — {item['Кількість']} {item['Одиниця']}"
+        label = f"{item['РџРѕР·РёС†С–СЏ']} вЂ” {item['РљС–Р»СЊРєС–СЃС‚СЊ']} {item['РћРґРёРЅРёС†СЏ']}"
         rows.append([InlineKeyboardButton(label, callback_data=f"stock_item_{i}")])
-    rows.append([InlineKeyboardButton("◀️ Назад", callback_data="back_main")])
+    rows.append([InlineKeyboardButton("в—ЂпёЏ РќР°Р·Р°Рґ", callback_data="back_main")])
 
     await query.edit_message_text(
-        "📤 Списання зі складу\n\nОберіть позицію:",
+        "рџ“¤ РЎРїРёСЃР°РЅРЅСЏ Р·С– СЃРєР»Р°РґСѓ\n\nРћР±РµСЂС–С‚СЊ РїРѕР·РёС†С–СЋ:",
         reply_markup=InlineKeyboardMarkup(rows)
     )
 
@@ -611,28 +594,28 @@ async def show_writeoff_vehicle(query, context, vtype, page):
 
     nav = []
     if page > 0:
-        nav.append(InlineKeyboardButton("◀️", callback_data=f"wopage_{vtype}_{page-1}"))
+        nav.append(InlineKeyboardButton("в—ЂпёЏ", callback_data=f"wopage_{vtype}_{page-1}"))
     if end < len(items):
-        nav.append(InlineKeyboardButton("▶️", callback_data=f"wopage_{vtype}_{page+1}"))
+        nav.append(InlineKeyboardButton("в–¶пёЏ", callback_data=f"wopage_{vtype}_{page+1}"))
     if nav:
         rows.append(nav)
 
     other = "tanks" if vtype == "trucks" else "trucks"
-    other_label = "🛢 Цистерни" if vtype == "trucks" else "🚛 Тягачі"
-    rows.append([InlineKeyboardButton(f"↩️ {other_label}", callback_data=f"wo_page_{other}")])
+    other_label = "рџ›ў Р¦РёСЃС‚РµСЂРЅРё" if vtype == "trucks" else "рџљ› РўСЏРіР°С‡С–"
+    rows.append([InlineKeyboardButton(f"в†©пёЏ {other_label}", callback_data=f"wo_page_{other}")])
 
-    label = "Тягачі" if vtype == "trucks" else "Цистерни"
+    label = "РўСЏРіР°С‡С–" if vtype == "trucks" else "Р¦РёСЃС‚РµСЂРЅРё"
     item = context.user_data.get("stock_item", {})
     await query.edit_message_text(
-        f"📤 Списання: {item.get('Позиція','')}\n"
-        f"Кількість: {context.user_data.get('writeoff_qty','')} {item.get('Одиниця','')}\n\n"
-        f"Оберіть {label} ({start+1}-{end} з {len(items)}):",
+        f"рџ“¤ РЎРїРёСЃР°РЅРЅСЏ: {item.get('РџРѕР·РёС†С–СЏ','')}\n"
+        f"РљС–Р»СЊРєС–СЃС‚СЊ: {context.user_data.get('writeoff_qty','')} {item.get('РћРґРёРЅРёС†СЏ','')}\n\n"
+        f"РћР±РµСЂС–С‚СЊ {label} ({start+1}-{end} Р· {len(items)}):",
         reply_markup=InlineKeyboardMarkup(rows)
     )
 
-# ══════════════════════════════════════════════
-# ОБРОБКА ТЕКСТОВИХ ПОВІДОМЛЕНЬ
-# ══════════════════════════════════════════════
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
+# РћР‘Р РћР‘РљРђ РўР•РљРЎРўРћР’РРҐ РџРћР’Р†Р”РћРњР›Р•РќР¬
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id not in MANAGER_IDS:
         return
@@ -641,24 +624,22 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     step = context.user_data.get("step")
 
-    # Редагування конкретного поля
+    # Р РµРґР°РіСѓРІР°РЅРЅСЏ РєРѕРЅРєСЂРµС‚РЅРѕРіРѕ РїРѕР»СЏ
     if step == "editing_field":
         field = context.user_data.get("editing_field")
         new_value = update.message.text.strip()
 
-        # Для поля vehicle перевіряємо чи є в списку машин
         if field == "vehicle":
             found = False
             for v in TRUCKS + TANKS:
                 if v.upper() == new_value.upper():
                     context.user_data["vehicle"] = v
-                    context.user_data["vehicle_type"] = "тягач" if v in TRUCKS else "цистерна"
+                    context.user_data["vehicle_type"] = "С‚СЏРіР°С‡" if v in TRUCKS else "С†РёСЃС‚РµСЂРЅР°"
                     found = True
                     break
             if not found:
                 context.user_data["vehicle"] = new_value
         else:
-            # Мапа полів code -> ключ в user_data
             field_map = {
                 "description": "description",
                 "amount": "amount",
@@ -671,42 +652,39 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 new_value = new_value.replace(" ", "").replace(",", ".")
             context.user_data[key] = new_value
 
-        # Очищаємо editing і знов показуємо підтвердження + меню
         context.user_data.pop("editing_field", None)
         context.user_data["step"] = "confirming"
         await show_confirmation(update.message, context)
         return
 
-    # Кількість для списання
+    # РљС–Р»СЊРєС–СЃС‚СЊ РґР»СЏ СЃРїРёСЃР°РЅРЅСЏ
     if step == "writeoff_qty":
         text = update.message.text.strip().replace(",", ".")
         try:
             qty = float(text)
         except ValueError:
-            await update.message.reply_text("Введіть число (кількість). Наприклад: 20 або 20.5")
+            await update.message.reply_text("Р’РІРµРґС–С‚СЊ С‡РёСЃР»Рѕ (РєС–Р»СЊРєС–СЃС‚СЊ). РќР°РїСЂРёРєР»Р°Рґ: 20 Р°Р±Рѕ 20.5")
             return
         item = context.user_data.get("stock_item", {})
-        available = float(item.get("Кількість", 0))
+        available = float(item.get("РљС–Р»СЊРєС–СЃС‚СЊ", 0))
         if qty > available:
             await update.message.reply_text(
-                f"❗️ На складі тільки {available} {item.get('Одиниця','')}.\n"
-                f"Введіть менше або рівно {available}:"
+                f"вќ—пёЏ РќР° СЃРєР»Р°РґС– С‚С–Р»СЊРєРё {available} {item.get('РћРґРёРЅРёС†СЏ','')}.\n"
+                f"Р’РІРµРґС–С‚СЊ РјРµРЅС€Рµ Р°Р±Рѕ СЂС–РІРЅРѕ {available}:"
             )
             return
         context.user_data["writeoff_qty"] = qty
-        # Вибір машини для списання
         keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🚛 Тягач", callback_data="wo_page_trucks")],
-            [InlineKeyboardButton("🛢 Цистерна", callback_data="wo_page_tanks")],
+            [InlineKeyboardButton("рџљ› РўСЏРіР°С‡", callback_data="wo_page_trucks")],
+            [InlineKeyboardButton("рџ›ў Р¦РёСЃС‚РµСЂРЅР°", callback_data="wo_page_tanks")],
         ])
         await update.message.reply_text(
-            f"📤 {item.get('Позиція','')} — {qty} {item.get('Одиниця','')}\n\n"
-            f"На яку машину списуємо?",
+            f"рџ“¤ {item.get('РџРѕР·РёС†С–СЏ','')} вЂ” {qty} {item.get('РћРґРёРЅРёС†СЏ','')}\n\n"
+            f"РќР° СЏРєСѓ РјР°С€РёРЅСѓ СЃРїРёСЃСѓС”РјРѕ?",
             reply_markup=keyboard
         )
         return
 
-    # Ручне введення ремонту / закупки
     if step == "manual_input":
         parts = [p.strip() for p in update.message.text.split(",")]
         op = context.user_data.get("op_type")
@@ -724,7 +702,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "invoice": invoice,
                 "date": datetime.now().strftime("%d.%m.%Y"),
             })
-        else:  # purchase
+        else:
             name = parts[0] if len(parts) > 0 else ""
             qty  = parts[1] if len(parts) > 1 else ""
             unit = parts[2] if len(parts) > 2 else ""
@@ -746,7 +724,6 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await show_confirmation(update.message, context)
         return
 
-    # Ручне введення закупки без машини
     if step == "manual_purchase":
         parts = [p.strip() for p in update.message.text.split(",")]
         name = parts[0] if len(parts) > 0 else ""
@@ -766,18 +743,18 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await show_confirmation(update.message, context)
         return
 
+
 async def show_edit_menu(msg_obj, context):
-    """Показує меню вибору поля для редагування."""
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🚗 Машина", callback_data="edit_field_vehicle")],
-        [InlineKeyboardButton("📝 Опис", callback_data="edit_field_description")],
-        [InlineKeyboardButton("💰 Сума", callback_data="edit_field_amount")],
-        [InlineKeyboardButton("🏪 Постачальник/СТО", callback_data="edit_field_contractor")],
-        [InlineKeyboardButton("📅 Дата", callback_data="edit_field_date")],
-        [InlineKeyboardButton("🔢 Номер рахунку", callback_data="edit_field_invoice")],
-        [InlineKeyboardButton("✅ Готово, відправити", callback_data="confirm_data")],
+        [InlineKeyboardButton("рџљ— РњР°С€РёРЅР°", callback_data="edit_field_vehicle")],
+        [InlineKeyboardButton("рџ“ќ РћРїРёСЃ", callback_data="edit_field_description")],
+        [InlineKeyboardButton("рџ’° РЎСѓРјР°", callback_data="edit_field_amount")],
+        [InlineKeyboardButton("рџЏЄ РџРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРє/РЎРўРћ", callback_data="edit_field_contractor")],
+        [InlineKeyboardButton("рџ“… Р”Р°С‚Р°", callback_data="edit_field_date")],
+        [InlineKeyboardButton("рџ”ў РќРѕРјРµСЂ СЂР°С…СѓРЅРєСѓ", callback_data="edit_field_invoice")],
+        [InlineKeyboardButton("вњ… Р“РѕС‚РѕРІРѕ, РІС–РґРїСЂР°РІРёС‚Рё", callback_data="confirm_data")],
     ])
-    text = "✏️ <b>Що виправити?</b>\n\nОберіть поле для редагування:"
+    text = "вњЏпёЏ <b>Р©Рѕ РІРёРїСЂР°РІРёС‚Рё?</b>\n\nРћР±РµСЂС–С‚СЊ РїРѕР»Рµ РґР»СЏ СЂРµРґР°РіСѓРІР°РЅРЅСЏ:"
 
     if hasattr(msg_obj, 'reply_text'):
         await msg_obj.reply_text(text, parse_mode="HTML", reply_markup=keyboard)
@@ -790,7 +767,7 @@ async def show_edit_menu(msg_obj, context):
 
 async def show_confirmation(msg_obj, context):
     op      = context.user_data.get("op_type", "")
-    vehicle = context.user_data.get("vehicle", "—")
+    vehicle = context.user_data.get("vehicle", "вЂ”")
     vtype   = context.user_data.get("vehicle_type", "")
     desc    = context.user_data.get("description", "")
     amount  = context.user_data.get("amount", "")
@@ -799,45 +776,43 @@ async def show_confirmation(msg_obj, context):
     invoice = context.user_data.get("invoice", "")
     date    = context.user_data.get("date", "")
 
-    op_labels = {"repair": "🔧 Ремонт", "purchase": "📥 Закупка", "writeoff": "📤 Списання"}
+    op_labels = {"repair": "рџ”§ Р РµРјРѕРЅС‚", "purchase": "рџ“Ґ Р—Р°РєСѓРїРєР°", "writeoff": "рџ“¤ РЎРїРёСЃР°РЅРЅСЏ"}
     op_label = op_labels.get(op, op)
 
     text = (
-        f"<b>Перевірте дані:</b>\n\n"
-        f"📋 Тип: {op_label}\n"
-        f"🚗 Машина: {vtype} {vehicle}\n"
-        f"📅 Дата: {date}\n"
-        f"📝 Опис: {desc}\n"
-        f"💰 Сума: {amount} грн\n"
-        f"💳 Оплата: {pay}\n"
-        f"🏪 Постачальник/СТО: {contr}\n"
+        f"<b>РџРµСЂРµРІС–СЂС‚Рµ РґР°РЅС–:</b>\n\n"
+        f"рџ“‹ РўРёРї: {op_label}\n"
+        f"рџљ— РњР°С€РёРЅР°: {vtype} {vehicle}\n"
+        f"рџ“… Р”Р°С‚Р°: {date}\n"
+        f"рџ“ќ РћРїРёСЃ: {desc}\n"
+        f"рџ’° РЎСѓРјР°: {amount} РіСЂРЅ\n"
+        f"рџ’і РћРїР»Р°С‚Р°: {pay}\n"
+        f"рџЏЄ РџРѕСЃС‚Р°С‡Р°Р»СЊРЅРёРє/РЎРўРћ: {contr}\n"
     )
     if invoice:
-        text += f"🔢 Рахунок: {invoice}\n"
-    text += "\nВсе вірно?"
+        text += f"рџ”ў Р Р°С…СѓРЅРѕРє: {invoice}\n"
+    text += "\nР’СЃРµ РІС–СЂРЅРѕ?"
 
     keyboard = InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("✅ Так, відправити", callback_data="confirm_data"),
-            InlineKeyboardButton("✏️ Виправити", callback_data="edit_data"),
+            InlineKeyboardButton("вњ… РўР°Рє, РІС–РґРїСЂР°РІРёС‚Рё", callback_data="confirm_data"),
+            InlineKeyboardButton("вњЏпёЏ Р’РёРїСЂР°РІРёС‚Рё", callback_data="edit_data"),
         ]
     ])
 
-    # msg_obj може бути Message (від тексту) або CallbackQuery (від кнопки)
     if hasattr(msg_obj, 'reply_text'):
         await msg_obj.reply_text(text, parse_mode="HTML", reply_markup=keyboard)
     else:
-        # CallbackQuery
         try:
             await msg_obj.edit_message_text(text, parse_mode="HTML", reply_markup=keyboard)
         except Exception:
             await msg_obj.message.reply_text(text, parse_mode="HTML", reply_markup=keyboard)
 
-# ══════════════════════════════════════════════
-# ОБРОБКА ФАЙЛІВ (PDF та фото)
-# ══════════════════════════════════════════════
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
+# РћР‘Р РћР‘РљРђ Р¤РђР™Р›Р†Р’ (PDF, С„РѕС‚Рѕ, Excel)
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 def extract_excel_text(file_bytes: bytes) -> str:
-    """Витягує весь текст з Excel файлу."""
+    """Р’РёС‚СЏРіСѓС” РІРµСЃСЊ С‚РµРєСЃС‚ Р· Excel С„Р°Р№Р»Сѓ."""
     import io
     try:
         import openpyxl
@@ -876,31 +851,26 @@ def extract_excel_text(file_bytes: bytes) -> str:
 
 
 async def parse_excel_invoice(file_bytes: bytes) -> dict:
-    """Парсить Excel рахунок: витягує текст і розпізнає через AI."""
+    """РџР°СЂСЃРёС‚СЊ Excel СЂР°С…СѓРЅРѕРє: РІРёС‚СЏРіСѓС” С‚РµРєСЃС‚ С– СЂРѕР·РїС–Р·РЅР°С” С‡РµСЂРµР· AI."""
     text = extract_excel_text(file_bytes)
     if not text:
         return {}
 
-    # Пробуємо через AI
     try:
         return await recognize_text_with_ai(text)
     except Exception as e:
         logger.error(f"Excel AI recognition error: {e}")
-        # Якщо AI не спрацював — резервний regex
         return extract_invoice_data_from_text(text)
 
 
 def extract_invoice_data_from_text(text: str) -> dict:
-    """Витягує поля рахунку з тексту через regex."""
-    import re
+    """Р РµР·РµСЂРІРЅРёР№ regex-РїР°СЂСЃРµСЂ."""
     result = {}
 
-    # Сума — шукаємо "Усього з ПДВ" або "Всього" або просто велике число
-    amount_match = re.search(r'[Уу]сього\s+з\s+ПДВ[:\s]+([0-9\s,\.]+)', text)
+    amount_match = re.search(r'[РЈСѓ]СЃСЊРѕРіРѕ\s+Р·\s+РџР”Р’[:\s]+([0-9\s,\.]+)', text)
     if not amount_match:
-        amount_match = re.search(r'[Вв]сього[:\s]+([0-9\s,\.]+)\s*грн', text)
+        amount_match = re.search(r'[Р’РІ]СЃСЊРѕРіРѕ[:\s]+([0-9\s,\.]+)\s*РіСЂРЅ', text)
     if not amount_match:
-        # Шукаємо найбільше число в документі
         numbers = re.findall(r'(\d{3,7}(?:[,\.]\d{2})?)', text)
         if numbers:
             amounts = [float(n.replace(',', '.').replace(' ', '')) for n in numbers]
@@ -912,16 +882,14 @@ def extract_invoice_data_from_text(text: str) -> dict:
         except Exception:
             pass
 
-    # Номер рахунку
-    inv_match = re.search(r'[Рр]ахунок[^\d]*(?:№\s*)?(\d+)', text)
+    inv_match = re.search(r'[Р СЂ]Р°С…СѓРЅРѕРє[^\d]*(?:в„–\s*)?(\d+)', text)
     if inv_match:
         result["invoice"] = inv_match.group(1)
 
-    # Дата
-    date_match = re.search(r'(\d{1,2})[.\s]+([а-яА-ЯёЁіІїЇєЄ]+)\s+(\d{4})', text)
+    date_match = re.search(r'(\d{1,2})[.\s]+([Р°-СЏРђ-РЇС‘РЃС–Р†С—Р‡С”Р„]+)\s+(\d{4})', text)
     if date_match:
-        months = {"січня":1,"лютого":2,"березня":3,"квітня":4,"травня":5,"червня":6,
-                  "липня":7,"серпня":8,"вересня":9,"жовтня":10,"листопада":11,"грудня":12}
+        months = {"СЃС–С‡РЅСЏ":1,"Р»СЋС‚РѕРіРѕ":2,"Р±РµСЂРµР·РЅСЏ":3,"РєРІС–С‚РЅСЏ":4,"С‚СЂР°РІРЅСЏ":5,"С‡РµСЂРІРЅСЏ":6,
+                  "Р»РёРїРЅСЏ":7,"СЃРµСЂРїРЅСЏ":8,"РІРµСЂРµСЃРЅСЏ":9,"Р¶РѕРІС‚РЅСЏ":10,"Р»РёСЃС‚РѕРїР°РґР°":11,"РіСЂСѓРґРЅСЏ":12}
         m = months.get(date_match.group(2).lower())
         if m:
             result["date"] = f"{int(date_match.group(1)):02d}.{m:02d}.{date_match.group(3)}"
@@ -930,24 +898,21 @@ def extract_invoice_data_from_text(text: str) -> dict:
         if date_match2:
             result["date"] = f"{date_match2.group(1)}.{date_match2.group(2)}.{date_match2.group(3)}"
 
-    # Постачальник
-    sup_match = re.search(r"[Пп]остачальник[^\n]{0,5}([А-ЯҐЄІЇёA-Z][^\n]{3,50})", text)
+    sup_match = re.search(r"[РџРї]РѕСЃС‚Р°С‡Р°Р»СЊРЅРёРє[^\n]{0,5}([Рђ-РЇТђР„Р†Р‡С‘A-Z][^\n]{3,50})", text)
     if sup_match:
         result["contractor"] = sup_match.group(1).strip()
 
-    # Опис послуг
-    desc_patterns = [r"Заправка[^\n]{0,50}", r"Ремонт[^\n]{0,50}", r"[Зз]аміна[^\n]{0,50}", r"ТО[^\n]{0,30}"]
+    desc_patterns = [r"Р—Р°РїСЂР°РІРєР°[^\n]{0,50}", r"Р РµРјРѕРЅС‚[^\n]{0,50}", r"[Р—Р·]Р°РјС–РЅР°[^\n]{0,50}", r"РўРћ[^\n]{0,30}"]
     for pat in desc_patterns:
         dm = re.search(pat, text)
         if dm:
             result["description"] = dm.group(0).strip()[:100]
             break
 
-    # Номер машини
     for vehicle in TRUCKS + TANKS:
         if vehicle.upper() in text.upper():
             result["vehicle"] = vehicle
-            result["vehicle_type"] = "тягач" if vehicle in TRUCKS else "цистерна"
+            result["vehicle_type"] = "С‚СЏРіР°С‡" if vehicle in TRUCKS else "С†РёСЃС‚РµСЂРЅР°"
             break
 
     return result
@@ -959,7 +924,7 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.user_data.get("step") != "awaiting_file":
         return
 
-    await update.message.reply_text("🤖 AI розпізнає документ, зачекайте...")
+    await update.message.reply_text("рџ¤– AI СЂРѕР·РїС–Р·РЅР°С” РґРѕРєСѓРјРµРЅС‚, Р·Р°С‡РµРєР°Р№С‚Рµ...")
 
     try:
         file_bytes = None
@@ -983,10 +948,9 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
             context.user_data["file_id"] = update.message.photo[-1].file_id
             context.user_data["file_type"] = "photo"
         else:
-            await update.message.reply_text("Надішліть PDF, фото або Excel файл рахунку.")
+            await update.message.reply_text("РќР°РґС–С€Р»С–С‚СЊ PDF, С„РѕС‚Рѕ Р°Р±Рѕ Excel С„Р°Р№Р» СЂР°С…СѓРЅРєСѓ.")
             return
 
-        # Спробуємо розпізнати
         data = {}
         if is_excel:
             try:
@@ -999,7 +963,6 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
             except Exception as e:
                 logger.error(f"AI recognition error: {e}")
 
-        # Зберігаємо розпізнані дані
         context.user_data.update({
             "date":         data.get("date") or datetime.now().strftime("%d.%m.%Y"),
             "vehicle":      data.get("vehicle") or context.user_data.get("vehicle", ""),
@@ -1016,16 +979,16 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         logger.error(f"handle_file error: {e}")
         await update.message.reply_text(
-            "❗️ Не вдалось розпізнати документ.\n\n"
-            "Введіть дані вручну:\n"
-            "<code>Опис, сума, СТО, номер рахунку</code>",
+            "вќ—пёЏ РќРµ РІРґР°Р»РѕСЃСЊ СЂРѕР·РїС–Р·РЅР°С‚Рё РґРѕРєСѓРјРµРЅС‚.\n\n"
+            "Р’РІРµРґС–С‚СЊ РґР°РЅС– РІСЂСѓС‡РЅСѓ:\n"
+            "<code>РћРїРёСЃ, СЃСѓРјР°, РЎРўРћ, РЅРѕРјРµСЂ СЂР°С…СѓРЅРєСѓ</code>",
             parse_mode="HTML"
         )
         context.user_data["step"] = "manual_input"
 
-# ══════════════════════════════════════════════
-# ВІДПРАВКА НА ПОГОДЖЕННЯ
-# ══════════════════════════════════════════════
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
+# Р’Р†Р”РџР РђР’РљРђ РќРђ РџРћР“РћР”Р–Р•РќРќРЇ
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 async def submit_for_approval(query, context):
     try:
         ws = get_repairs_sheet()
@@ -1037,13 +1000,13 @@ async def submit_for_approval(query, context):
         vtype   = context.user_data.get("vehicle_type", "")
         desc    = context.user_data.get("description", "")
         amount  = context.user_data.get("amount", "")
-        pay     = context.user_data.get("payment", "готівка")
+        pay     = context.user_data.get("payment", "РіРѕС‚С–РІРєР°")
         contr   = context.user_data.get("contractor", "")
         invoice = context.user_data.get("invoice", "")
         date    = context.user_data.get("date", "")
         manager = MANAGER_NAMES.get(query.from_user.id, query.from_user.first_name)
 
-        op_labels = {"repair": "Ремонт", "purchase": "Закупка", "writeoff": "Списання"}
+        op_labels = {"repair": "Р РµРјРѕРЅС‚", "purchase": "Р—Р°РєСѓРїРєР°", "writeoff": "РЎРїРёСЃР°РЅРЅСЏ"}
         op_label = op_labels.get(op, op)
 
         ws.append_row([
@@ -1058,43 +1021,40 @@ async def submit_for_approval(query, context):
             contr,
             invoice,
             manager,
-            "На погодженні",
+            "РќР° РїРѕРіРѕРґР¶РµРЅРЅС–",
             "", ""
         ])
 
-        # Зберігаємо в bot_data
         context.application.bot_data[f"repair_{record_id}"] = dict(context.user_data)
         context.application.bot_data[f"repair_{record_id}"]["record_id"] = record_id
         context.application.bot_data[f"repair_{record_id}"]["manager_id"] = query.from_user.id
 
         await query.edit_message_text(
-            f"✅ Заявку #{record_id} відправлено на погодження директору.\n\n"
-            f"Очікуйте рішення."
+            f"вњ… Р—Р°СЏРІРєСѓ #{record_id} РІС–РґРїСЂР°РІР»РµРЅРѕ РЅР° РїРѕРіРѕРґР¶РµРЅРЅСЏ РґРёСЂРµРєС‚РѕСЂСѓ.\n\n"
+            f"РћС‡С–РєСѓР№С‚Рµ СЂС–С€РµРЅРЅСЏ."
         )
 
-        # Відправляємо директору
         director_text = (
-            f"📋 <b>Нова заявка #{record_id}</b>\n\n"
-            f"👤 Менеджер: {manager}\n"
-            f"📋 Тип: {op_label}\n"
-            f"🚗 Машина: {vtype} {vehicle}\n"
-            f"📅 Дата: {date}\n"
-            f"📝 Опис: {desc}\n"
-            f"💰 Сума: {amount} грн\n"
-            f"💳 Оплата: {pay}\n"
-            f"🏪 {contr}\n"
+            f"рџ“‹ <b>РќРѕРІР° Р·Р°СЏРІРєР° #{record_id}</b>\n\n"
+            f"рџ‘¤ РњРµРЅРµРґР¶РµСЂ: {manager}\n"
+            f"рџ“‹ РўРёРї: {op_label}\n"
+            f"рџљ— РњР°С€РёРЅР°: {vtype} {vehicle}\n"
+            f"рџ“… Р”Р°С‚Р°: {date}\n"
+            f"рџ“ќ РћРїРёСЃ: {desc}\n"
+            f"рџ’° РЎСѓРјР°: {amount} РіСЂРЅ\n"
+            f"рџ’і РћРїР»Р°С‚Р°: {pay}\n"
+            f"рџЏЄ {contr}\n"
         )
         if invoice:
-            director_text += f"🔢 Рахунок: {invoice}"
+            director_text += f"рџ”ў Р Р°С…СѓРЅРѕРє: {invoice}"
 
         keyboard = InlineKeyboardMarkup([
             [
-                InlineKeyboardButton("✅ Погодити", callback_data=f"director_approve_{record_id}"),
-                InlineKeyboardButton("❌ Відхилити", callback_data=f"director_reject_{record_id}"),
+                InlineKeyboardButton("вњ… РџРѕРіРѕРґРёС‚Рё", callback_data=f"director_approve_{record_id}"),
+                InlineKeyboardButton("вќЊ Р’С–РґС…РёР»РёС‚Рё", callback_data=f"director_reject_{record_id}"),
             ]
         ])
 
-        # Якщо є файл — пересилаємо директору
         file_id   = context.user_data.get("file_id")
         file_type = context.user_data.get("file_type")
 
@@ -1122,53 +1082,52 @@ async def submit_for_approval(query, context):
         error_msg = str(e)[:200]
         try:
             await query.edit_message_text(
-                f"❌ Помилка збереження:\n<code>{error_msg}</code>\n\nСпробуйте ще раз або зверніться до адміна.",
+                f"вќЊ РџРѕРјРёР»РєР° Р·Р±РµСЂРµР¶РµРЅРЅСЏ:\n<code>{error_msg}</code>\n\nРЎРїСЂРѕР±СѓР№С‚Рµ С‰Рµ СЂР°Р· Р°Р±Рѕ Р·РІРµСЂРЅС–С‚СЊСЃСЏ РґРѕ Р°РґРјС–РЅР°.",
                 parse_mode="HTML"
             )
         except Exception:
             await context.bot.send_message(
                 chat_id=query.from_user.id,
-                text=f"❌ Помилка збереження:\n{error_msg}\n\nСпробуйте ще раз."
+                text=f"вќЊ РџРѕРјРёР»РєР° Р·Р±РµСЂРµР¶РµРЅРЅСЏ:\n{error_msg}\n\nРЎРїСЂРѕР±СѓР№С‚Рµ С‰Рµ СЂР°Р·."
             )
 
-# ══════════════════════════════════════════════
-# ПОГОДЖЕННЯ ДИРЕКТОРА
-# ══════════════════════════════════════════════
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
+# РџРћР“РћР”Р–Р•РќРќРЇ Р”РР Р•РљРўРћР Рђ
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 async def director_approve(query, context, record_id):
     if query.from_user.id != DIRECTOR_ID:
-        await query.answer("⛔ Тільки директор може погоджувати.", show_alert=True)
+        await query.answer("в›” РўС–Р»СЊРєРё РґРёСЂРµРєС‚РѕСЂ РјРѕР¶Рµ РїРѕРіРѕРґР¶СѓРІР°С‚Рё.", show_alert=True)
         return
     try:
         ws = get_repairs_sheet()
         cell = ws.find(str(record_id))
-        ws.update_cell(cell.row, 12, "Погоджено")
+        ws.update_cell(cell.row, 12, "РџРѕРіРѕРґР¶РµРЅРѕ")
         ws.update_cell(cell.row, 13, datetime.now().strftime("%d.%m.%Y %H:%M"))
 
         if query.message.caption:
             await query.edit_message_caption(
-                query.message.caption + "\n\n✅ <b>Погоджено директором</b>",
+                query.message.caption + "\n\nвњ… <b>РџРѕРіРѕРґР¶РµРЅРѕ РґРёСЂРµРєС‚РѕСЂРѕРј</b>",
                 parse_mode="HTML"
             )
         else:
             await query.edit_message_text(
-                query.message.text + "\n\n✅ <b>Погоджено директором</b>",
+                query.message.text + "\n\nвњ… <b>РџРѕРіРѕРґР¶РµРЅРѕ РґРёСЂРµРєС‚РѕСЂРѕРј</b>",
                 parse_mode="HTML"
             )
 
-        # Відправляємо бухгалтеру
         data = context.application.bot_data.get(f"repair_{record_id}", {})
         accountant_text = (
-            f"💳 <b>До оплати — заявка #{record_id}</b>\n\n"
-            f"📋 Тип: {data.get('op_type','')}\n"
-            f"🚗 Машина: {data.get('vehicle_type','')} {data.get('vehicle','')}\n"
-            f"📝 {data.get('description','')}\n"
-            f"💰 Сума: {data.get('amount','')} грн\n"
-            f"💳 Оплата: {data.get('payment','')}\n"
-            f"🏪 {data.get('contractor','')}\n"
-            f"✅ Погоджено директором"
+            f"рџ’і <b>Р”Рѕ РѕРїР»Р°С‚Рё вЂ” Р·Р°СЏРІРєР° #{record_id}</b>\n\n"
+            f"рџ“‹ РўРёРї: {data.get('op_type','')}\n"
+            f"рџљ— РњР°С€РёРЅР°: {data.get('vehicle_type','')} {data.get('vehicle','')}\n"
+            f"рџ“ќ {data.get('description','')}\n"
+            f"рџ’° РЎСѓРјР°: {data.get('amount','')} РіСЂРЅ\n"
+            f"рџ’і РћРїР»Р°С‚Р°: {data.get('payment','')}\n"
+            f"рџЏЄ {data.get('contractor','')}\n"
+            f"вњ… РџРѕРіРѕРґР¶РµРЅРѕ РґРёСЂРµРєС‚РѕСЂРѕРј"
         )
         keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("✅ Оплачено", callback_data=f"accountant_paid_{record_id}")]
+            [InlineKeyboardButton("вњ… РћРїР»Р°С‡РµРЅРѕ", callback_data=f"accountant_paid_{record_id}")]
         ])
 
         file_id   = data.get("file_id")
@@ -1191,12 +1150,11 @@ async def director_approve(query, context, record_id):
                 parse_mode="HTML", reply_markup=keyboard
             )
 
-        # Сповістити менеджера
         manager_id = data.get("manager_id")
         if manager_id:
             await context.bot.send_message(
                 chat_id=manager_id,
-                text=f"✅ Заявку #{record_id} <b>погоджено директором</b>. Передано бухгалтеру на оплату.",
+                text=f"вњ… Р—Р°СЏРІРєСѓ #{record_id} <b>РїРѕРіРѕРґР¶РµРЅРѕ РґРёСЂРµРєС‚РѕСЂРѕРј</b>. РџРµСЂРµРґР°РЅРѕ Р±СѓС…РіР°Р»С‚РµСЂСѓ РЅР° РѕРїР»Р°С‚Сѓ.",
                 parse_mode="HTML"
             )
 
@@ -1205,21 +1163,21 @@ async def director_approve(query, context, record_id):
 
 async def director_reject(query, context, record_id):
     if query.from_user.id != DIRECTOR_ID:
-        await query.answer("⛔ Тільки директор може відхиляти.", show_alert=True)
+        await query.answer("в›” РўС–Р»СЊРєРё РґРёСЂРµРєС‚РѕСЂ РјРѕР¶Рµ РІС–РґС…РёР»СЏС‚Рё.", show_alert=True)
         return
     try:
         ws = get_repairs_sheet()
         cell = ws.find(str(record_id))
-        ws.update_cell(cell.row, 12, "Відхилено директором")
+        ws.update_cell(cell.row, 12, "Р’С–РґС…РёР»РµРЅРѕ РґРёСЂРµРєС‚РѕСЂРѕРј")
 
         if query.message.caption:
             await query.edit_message_caption(
-                query.message.caption + "\n\n❌ <b>Відхилено директором</b>",
+                query.message.caption + "\n\nвќЊ <b>Р’С–РґС…РёР»РµРЅРѕ РґРёСЂРµРєС‚РѕСЂРѕРј</b>",
                 parse_mode="HTML"
             )
         else:
             await query.edit_message_text(
-                query.message.text + "\n\n❌ <b>Відхилено директором</b>",
+                query.message.text + "\n\nвќЊ <b>Р’С–РґС…РёР»РµРЅРѕ РґРёСЂРµРєС‚РѕСЂРѕРј</b>",
                 parse_mode="HTML"
             )
 
@@ -1228,33 +1186,33 @@ async def director_reject(query, context, record_id):
         if manager_id:
             await context.bot.send_message(
                 chat_id=manager_id,
-                text=f"❌ Заявку #{record_id} <b>відхилено директором</b>.",
+                text=f"вќЊ Р—Р°СЏРІРєСѓ #{record_id} <b>РІС–РґС…РёР»РµРЅРѕ РґРёСЂРµРєС‚РѕСЂРѕРј</b>.",
                 parse_mode="HTML"
             )
     except Exception as e:
         logger.error(f"director_reject error: {e}")
 
-# ══════════════════════════════════════════════
-# ПІДТВЕРДЖЕННЯ БУХГАЛТЕРА
-# ══════════════════════════════════════════════
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
+# РџР†Р”РўР’Р•Р Р”Р–Р•РќРќРЇ Р‘РЈРҐР“РђР›РўР•Р Рђ
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 async def accountant_paid(query, context, record_id):
     if query.from_user.id != ACCOUNTANT_ID:
-        await query.answer("⛔ Тільки бухгалтер може підтверджувати оплату.", show_alert=True)
+        await query.answer("в›” РўС–Р»СЊРєРё Р±СѓС…РіР°Р»С‚РµСЂ РјРѕР¶Рµ РїС–РґС‚РІРµСЂРґР¶СѓРІР°С‚Рё РѕРїР»Р°С‚Сѓ.", show_alert=True)
         return
     try:
         ws = get_repairs_sheet()
         cell = ws.find(str(record_id))
-        ws.update_cell(cell.row, 12, "Оплачено")
+        ws.update_cell(cell.row, 12, "РћРїР»Р°С‡РµРЅРѕ")
         ws.update_cell(cell.row, 14, datetime.now().strftime("%d.%m.%Y %H:%M"))
 
         if query.message.caption:
             await query.edit_message_caption(
-                query.message.caption + "\n\n✅ <b>Оплачено</b>",
+                query.message.caption + "\n\nвњ… <b>РћРїР»Р°С‡РµРЅРѕ</b>",
                 parse_mode="HTML"
             )
         else:
             await query.edit_message_text(
-                query.message.text + "\n\n✅ <b>Оплачено</b>",
+                query.message.text + "\n\nвњ… <b>РћРїР»Р°С‡РµРЅРѕ</b>",
                 parse_mode="HTML"
             )
 
@@ -1263,11 +1221,10 @@ async def accountant_paid(query, context, record_id):
         if manager_id:
             await context.bot.send_message(
                 chat_id=manager_id,
-                text=f"✅ Заявку #{record_id} <b>оплачено</b> бухгалтером.",
+                text=f"вњ… Р—Р°СЏРІРєСѓ #{record_id} <b>РѕРїР»Р°С‡РµРЅРѕ</b> Р±СѓС…РіР°Р»С‚РµСЂРѕРј.",
                 parse_mode="HTML"
             )
 
-        # Якщо закупка — оновлюємо склад
         op = data.get("op_type", "")
         if op == "purchase":
             name  = data.get("stock_name", "")
@@ -1281,47 +1238,45 @@ async def accountant_paid(query, context, record_id):
     except Exception as e:
         logger.error(f"accountant_paid error: {e}")
 
-# ══════════════════════════════════════════════
-# СПИСАННЯ
-# ══════════════════════════════════════════════
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
+# РЎРџРРЎРђРќРќРЇ
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 async def submit_writeoff(query, context):
     try:
         item    = context.user_data.get("stock_item", {})
         qty     = context.user_data.get("writeoff_qty", 0)
         vehicle = context.user_data.get("vehicle", "")
         vtype   = context.user_data.get("vehicle_type", "")
-        manager = MANAGER_NAMES.get(query.from_user.id, query.from_user.first_name)
 
-        name  = item.get("Позиція", "")
-        unit  = item.get("Одиниця", "")
-        price = float(item.get("Ціна за одиницю", 0) or 0)
+        name  = item.get("РџРѕР·РёС†С–СЏ", "")
+        unit  = item.get("РћРґРёРЅРёС†СЏ", "")
+        price = float(item.get("Р¦С–РЅР° Р·Р° РѕРґРёРЅРёС†СЋ", 0) or 0)
         total = round(qty * price, 2)
 
-        # Підтвердження перед відправкою директору
         context.user_data["step"] = "confirm_writeoff"
         keyboard = InlineKeyboardMarkup([
             [
-                InlineKeyboardButton("✅ Так, відправити", callback_data="confirm_data"),
-                InlineKeyboardButton("✏️ Виправити", callback_data="back_main"),
+                InlineKeyboardButton("вњ… РўР°Рє, РІС–РґРїСЂР°РІРёС‚Рё", callback_data="confirm_data"),
+                InlineKeyboardButton("вњЏпёЏ Р’РёРїСЂР°РІРёС‚Рё", callback_data="back_main"),
             ]
         ])
         await query.edit_message_text(
-            f"<b>Перевірте дані списання:</b>\n\n"
-            f"📤 Тип: Списання\n"
-            f"📦 Позиція: {name}\n"
-            f"📊 Кількість: {qty} {unit}\n"
-            f"🚗 Машина: {vtype} {vehicle}\n"
-            f"💰 Вартість: {total} грн\n\n"
-            f"Відправити директору на погодження?",
+            f"<b>РџРµСЂРµРІС–СЂС‚Рµ РґР°РЅС– СЃРїРёСЃР°РЅРЅСЏ:</b>\n\n"
+            f"рџ“¤ РўРёРї: РЎРїРёСЃР°РЅРЅСЏ\n"
+            f"рџ“¦ РџРѕР·РёС†С–СЏ: {name}\n"
+            f"рџ“Љ РљС–Р»СЊРєС–СЃС‚СЊ: {qty} {unit}\n"
+            f"рџљ— РњР°С€РёРЅР°: {vtype} {vehicle}\n"
+            f"рџ’° Р’Р°СЂС‚С–СЃС‚СЊ: {total} РіСЂРЅ\n\n"
+            f"Р’С–РґРїСЂР°РІРёС‚Рё РґРёСЂРµРєС‚РѕСЂСѓ РЅР° РїРѕРіРѕРґР¶РµРЅРЅСЏ?",
             parse_mode="HTML",
             reply_markup=keyboard
         )
         context.user_data.update({
             "op_type": "writeoff",
-            "description": f"Списання зі складу: {name} {qty} {unit}",
+            "description": f"РЎРїРёСЃР°РЅРЅСЏ Р·С– СЃРєР»Р°РґСѓ: {name} {qty} {unit}",
             "amount": str(total),
-            "payment": "—",
-            "contractor": "Склад",
+            "payment": "вЂ”",
+            "contractor": "РЎРєР»Р°Рґ",
             "invoice": "",
             "date": datetime.now().strftime("%d.%m.%Y"),
         })
@@ -1329,9 +1284,9 @@ async def submit_writeoff(query, context):
     except Exception as e:
         logger.error(f"submit_writeoff error: {e}")
 
-# ══════════════════════════════════════════════
-# ЗВІТ /report
-# ══════════════════════════════════════════════
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
+# Р—Р’Р†Рў /report
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 async def report_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id not in MANAGER_IDS + [DIRECTOR_ID]:
         return
@@ -1341,45 +1296,48 @@ async def report_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         current_month = datetime.now().strftime("%m.%Y")
 
         paid = [r for r in records
-                if r.get("Статус") == "Оплачено"
-                and current_month in str(r.get("Дата подачі", ""))]
+                if r.get("РЎС‚Р°С‚СѓСЃ") == "РћРїР»Р°С‡РµРЅРѕ"
+                and current_month in str(r.get("Р”Р°С‚Р° РїРѕРґР°С‡С–", ""))]
 
         if not paid:
-            await update.message.reply_text(f"За {current_month} оплачених заявок немає.")
+            await update.message.reply_text(f"Р—Р° {current_month} РѕРїР»Р°С‡РµРЅРёС… Р·Р°СЏРІРѕРє РЅРµРјР°С”.")
             return
 
-        # Витрати по машинах
         by_vehicle = {}
         for r in paid:
-            v = r.get("Машина", "невідомо")
-            amount = float(str(r.get("Сума", 0)).replace(" ", "") or 0)
+            v = r.get("РњР°С€РёРЅР°", "РЅРµРІС–РґРѕРјРѕ")
+            amount = float(str(r.get("РЎСѓРјР°", 0)).replace(" ", "") or 0)
             by_vehicle[v] = by_vehicle.get(v, 0) + amount
 
         total = sum(by_vehicle.values())
         top5  = sorted(by_vehicle.items(), key=lambda x: x[1], reverse=True)[:5]
-        cash  = sum(float(str(r.get("Сума",0)).replace(" ","") or 0)
-                    for r in paid if r.get("Форма оплати") == "готівка")
+        cash  = sum(float(str(r.get("РЎСѓРјР°",0)).replace(" ","") or 0)
+                    for r in paid if r.get("Р¤РѕСЂРјР° РѕРїР»Р°С‚Рё") == "РіРѕС‚С–РІРєР°")
         bank  = total - cash
 
-        lines = [f"📊 <b>Звіт за {current_month}</b>\n"]
-        lines.append(f"💰 Загальна сума: <b>{total:,.0f} грн</b>")
-        lines.append(f"💵 Готівка: {cash:,.0f} грн")
-        lines.append(f"🏦 Безнал: {bank:,.0f} грн")
-        lines.append(f"📋 Заявок: {len(paid)}\n")
-        lines.append("<b>ТОП-5 машин:</b>")
+        lines = [f"рџ“Љ <b>Р—РІС–С‚ Р·Р° {current_month}</b>\n"]
+        lines.append(f"рџ’° Р—Р°РіР°Р»СЊРЅР° СЃСѓРјР°: <b>{total:,.0f} РіСЂРЅ</b>")
+        lines.append(f"рџ’µ Р“РѕС‚С–РІРєР°: {cash:,.0f} РіСЂРЅ")
+        lines.append(f"рџЏ¦ Р‘РµР·РЅР°Р»: {bank:,.0f} РіСЂРЅ")
+        lines.append(f"рџ“‹ Р—Р°СЏРІРѕРє: {len(paid)}\n")
+        lines.append("<b>РўРћРџ-5 РјР°С€РёРЅ:</b>")
         for i, (v, amt) in enumerate(top5, 1):
-            lines.append(f"{i}. {v} — {amt:,.0f} грн")
+            lines.append(f"{i}. {v} вЂ” {amt:,.0f} РіСЂРЅ")
 
         await update.message.reply_text("\n".join(lines), parse_mode="HTML")
 
     except Exception as e:
         logger.error(f"report_cmd error: {e}")
-        await update.message.reply_text("Помилка при формуванні звіту.")
+        await update.message.reply_text("РџРѕРјРёР»РєР° РїСЂРё С„РѕСЂРјСѓРІР°РЅРЅС– Р·РІС–С‚Сѓ.")
 
-# ══════════════════════════════════════════════
-# ЗАПУСК
-# ══════════════════════════════════════════════
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
+# Р—РђРџРЈРЎРљ
+# в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 def main():
+    if not BOT_TOKEN:
+        logger.error("BOT_TOKEN РЅРµ РІСЃС‚Р°РЅРѕРІР»РµРЅРѕ! Р”РѕРґР°Р№С‚Рµ Р·РјС–РЅРЅСѓ BOT_TOKEN РІ Railway.")
+        return
+
     app = Application.builder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
