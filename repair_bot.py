@@ -159,6 +159,22 @@ async def broadcast_to_managers(context, text, exclude_id=None, parse_mode="HTML
         except Exception as e:
             logger.error(f"broadcast to {mid} error: {e}")
 
+def parse_purchase_description(desc):
+    """Витягує name, qty, unit з опису формату 'name qty unit'.
+    Наприклад: 'Масло моторне 100 л' → ('Масло моторне', 100.0, 'л')."""
+    if not desc:
+        return "", 0.0, ""
+    parts = desc.strip().rsplit(maxsplit=2)
+    if len(parts) < 3:
+        return "", 0.0, ""
+    try:
+        name = parts[0].strip()
+        qty = float(parts[1].replace(',', '.').replace(' ', ''))
+        unit = parts[2].strip()
+        return name, qty, unit
+    except Exception:
+        return "", 0.0, ""
+
 # ══════════════════════════════════════════════
 # СКЛАД - ЛОГІКА
 # ══════════════════════════════════════════════
@@ -1280,9 +1296,17 @@ async def director_approve(query, context, record_id):
 
         # Якщо готівка і закупка — одразу оновлюємо склад
         if is_cash and op_label == "Закупка":
+            # Спочатку пробуємо взяти з bot_data, якщо нема — парсимо з опису
             name  = data.get("stock_name", "")
-            qty   = float(data.get("stock_qty", 0) or 0)
+            try:
+                qty = float(data.get("stock_qty", 0) or 0)
+            except Exception:
+                qty = 0
             unit  = data.get("stock_unit", "")
+
+            if not name or not qty:
+                name, qty, unit = parse_purchase_description(desc)
+
             try:
                 amount_val = float(str(amount).replace(" ", "").replace(",", ".") or 0)
             except Exception:
@@ -1482,9 +1506,17 @@ async def accountant_paid(query, context, record_id):
 
         # Якщо закупка — оновлюємо склад
         if op_label == "Закупка":
+            desc         = row_data[5] if len(row_data) > 5 else ""
             name  = data.get("stock_name", "")
-            qty   = float(data.get("stock_qty", 0) or 0)
+            try:
+                qty = float(data.get("stock_qty", 0) or 0)
+            except Exception:
+                qty = 0
             unit  = data.get("stock_unit", "")
+
+            if not name or not qty:
+                name, qty, unit = parse_purchase_description(desc)
+
             try:
                 amount_val = float(str(amount).replace(" ", "").replace(",", ".") or 0)
             except Exception:
@@ -1548,6 +1580,37 @@ async def submit_writeoff(query, context):
 # ══════════════════════════════════════════════
 # ЗВІТ /report
 # ══════════════════════════════════════════════
+async def stock_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Показує вміст складу."""
+    if update.effective_user.id not in MANAGER_IDS + [DIRECTOR_ID, ACCOUNTANT_ID]:
+        return
+    try:
+        items = get_stock_items()
+        if not items:
+            await update.message.reply_text("📦 Склад порожній.")
+            return
+
+        lines = ["📦 <b>Склад:</b>\n"]
+        total_value = 0
+        for item in items:
+            name  = item.get("Позиція", "")
+            qty   = item.get("Кількість", 0)
+            unit  = item.get("Одиниця", "")
+            price = item.get("Ціна за одиницю", 0)
+            total = item.get("Загальна вартість", 0)
+            try:
+                total_value += float(str(total).replace(" ", "").replace(",", ".") or 0)
+            except Exception:
+                pass
+            lines.append(f"• <b>{name}</b> — {qty} {unit} ({price} грн/{unit}, {total} грн)")
+
+        lines.append(f"\n💰 Загальна вартість: <b>{total_value:,.2f} грн</b>")
+        await update.message.reply_text("\n".join(lines), parse_mode="HTML")
+    except Exception as e:
+        logger.error(f"stock_cmd error: {e}")
+        await update.message.reply_text(f"Помилка: {str(e)[:200]}")
+
+
 async def report_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id not in MANAGER_IDS + [DIRECTOR_ID]:
         return
@@ -1604,6 +1667,7 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("new",   new_cmd))
     app.add_handler(CommandHandler("report", report_cmd))
+    app.add_handler(CommandHandler("stock", stock_cmd))
     app.add_handler(CallbackQueryHandler(handle_callback))
     app.add_handler(MessageHandler(
         filters.Document.ALL | filters.PHOTO,
