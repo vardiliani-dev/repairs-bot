@@ -21,9 +21,9 @@ BOT_TOKEN  = os.environ.get("BOT_TOKEN", "")
 SHEET_ID   = "1Nq-RKRAF16ZOs2gq7RS7IZ5-6PFsxZrNT4MkJ75dJ9U"
 CREDS_FILE = "create-497113-eed86744057e.json"
 
-MANAGER_IDS = [805571381, 692989160, 321443422]
+MANAGER_IDS = [805971381, 692989160, 321443422]
 MANAGER_NAMES = {
-    805571381: "Олександр",
+    805971381: "Олександр",
     692989160: "Виталій",
     321443422: "О.О.",
 }
@@ -146,6 +146,18 @@ def get_manager_id_by_name(name):
         if uname == name:
             return uid
     return None
+
+async def broadcast_to_managers(context, text, exclude_id=None, parse_mode="HTML"):
+    """Розсилає текст усім менеджерам крім exclude_id."""
+    for mid in MANAGER_IDS:
+        if mid == exclude_id:
+            continue
+        try:
+            await context.bot.send_message(
+                chat_id=mid, text=text, parse_mode=parse_mode
+            )
+        except Exception as e:
+            logger.error(f"broadcast to {mid} error: {e}")
 
 # ══════════════════════════════════════════════
 # СКЛАД - ЛОГІКА
@@ -1005,7 +1017,89 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ══════════════════════════════════════════════
 # ВІДПРАВКА НА ПОГОДЖЕННЯ
 # ══════════════════════════════════════════════
+async def submit_writeoff_direct(query, context):
+    """Списання зі складу без погодження директором — одразу фіксується."""
+    try:
+        ws = get_repairs_sheet()
+        all_rows = ws.get_all_values()
+        record_id = len(all_rows)
+
+        item    = context.user_data.get("stock_item", {})
+        qty     = float(context.user_data.get("writeoff_qty", 0) or 0)
+        vehicle = context.user_data.get("vehicle", "")
+        vtype   = context.user_data.get("vehicle_type", "")
+        manager = MANAGER_NAMES.get(query.from_user.id, query.from_user.first_name)
+
+        name  = item.get("Позиція", "")
+        unit  = item.get("Одиниця", "")
+        price = float(item.get("Ціна за одиницю", 0) or 0)
+        total = round(qty * price, 2)
+        desc  = f"Списання зі складу: {name} {qty} {unit}"
+
+        # Записуємо в таблицю одразу зі статусом "Списано"
+        ws.append_row([
+            record_id,
+            datetime.now().strftime("%d.%m.%Y %H:%M"),
+            "Списання",
+            vehicle,
+            vtype,
+            desc,
+            str(total),
+            "—",
+            "Склад",
+            "",
+            manager,
+            "Списано",
+            datetime.now().strftime("%d.%m.%Y %H:%M"),
+            datetime.now().strftime("%d.%m.%Y %H:%M"),
+        ])
+
+        # Списуємо зі складу (від'ємна кількість)
+        if name and qty:
+            try:
+                update_stock(name, unit, -qty, price)
+            except Exception as e:
+                logger.error(f"update_stock (writeoff) error: {e}")
+
+        await query.edit_message_text(
+            f"✅ Списання #{record_id} виконано.\n\n"
+            f"📦 {name} — {qty} {unit}\n"
+            f"🚗 {vtype} {vehicle}\n"
+            f"💰 Вартість: {total} грн"
+        )
+
+        # Розсилка іншим менеджерам про списання
+        await broadcast_to_managers(
+            context,
+            f"📤 <b>Списання #{record_id}</b> ({manager})\n\n"
+            f"📦 {name} — {qty} {unit}\n"
+            f"🚗 {vtype} {vehicle}\n"
+            f"💰 Вартість: {total} грн",
+            exclude_id=query.from_user.id
+        )
+
+        context.user_data.clear()
+
+    except Exception as e:
+        logger.error(f"submit_writeoff_direct error: {e}", exc_info=True)
+        error_msg = str(e)[:200]
+        try:
+            await query.edit_message_text(
+                f"❌ Помилка списання:\n<code>{error_msg}</code>",
+                parse_mode="HTML"
+            )
+        except Exception:
+            pass
+
+
 async def submit_for_approval(query, context):
+    op = context.user_data.get("op_type", "")
+
+    # Списання зі складу — без погодження директором, одразу списуємо
+    if op == "writeoff":
+        await submit_writeoff_direct(query, context)
+        return
+
     try:
         ws = get_repairs_sheet()
         all_rows = ws.get_all_values()
@@ -1049,6 +1143,19 @@ async def submit_for_approval(query, context):
             f"✅ Заявку #{record_id} відправлено на погодження директору.\n\n"
             f"Очікуйте рішення."
         )
+
+        # Повідомити інших менеджерів про нову заявку
+        broadcast_text = (
+            f"📋 <b>Нова заявка #{record_id}</b> від {manager}\n\n"
+            f"📋 Тип: {op_label}\n"
+            f"🚗 Машина: {vtype} {vehicle}\n"
+            f"📝 {desc}\n"
+            f"💰 Сума: {amount} грн\n"
+            f"💳 Оплата: {pay}\n"
+            f"🏪 {contr}\n"
+            f"⏳ На погодженні у директора"
+        )
+        await broadcast_to_managers(context, broadcast_text, exclude_id=query.from_user.id)
 
         director_text = (
             f"📋 <b>Нова заявка #{record_id}</b>\n\n"
@@ -1198,6 +1305,12 @@ async def director_approve(query, context, record_id):
                     )
                 except Exception as e:
                     logger.error(f"notify manager (cash) error: {e}")
+            # Розсилка іншим менеджерам
+            await broadcast_to_managers(
+                context,
+                f"✅ Заявку #{record_id} ({manager_name}) <b>погоджено та оплачено готівкою</b>.",
+                exclude_id=manager_id
+            )
             return
 
         # Безнал — передаємо бухгалтеру
@@ -1254,6 +1367,13 @@ async def director_approve(query, context, record_id):
             except Exception as e:
                 logger.error(f"notify manager error: {e}")
 
+        # Розсилка іншим менеджерам
+        await broadcast_to_managers(
+            context,
+            f"✅ Заявку #{record_id} ({manager_name}) <b>погоджено директором</b>. Передано бухгалтеру на оплату.",
+            exclude_id=manager_id
+        )
+
     except Exception as e:
         logger.error(f"director_approve error: {e}", exc_info=True)
 
@@ -1296,6 +1416,13 @@ async def director_reject(query, context, record_id):
                 )
             except Exception as e:
                 logger.error(f"notify manager reject error: {e}")
+
+        # Розсилка іншим менеджерам
+        await broadcast_to_managers(
+            context,
+            f"❌ Заявку #{record_id} ({manager_name}) <b>відхилено директором</b>.",
+            exclude_id=manager_id
+        )
     except Exception as e:
         logger.error(f"director_reject error: {e}")
 
@@ -1345,6 +1472,13 @@ async def accountant_paid(query, context, record_id):
                 )
             except Exception as e:
                 logger.error(f"notify manager paid error: {e}")
+
+        # Розсилка іншим менеджерам
+        await broadcast_to_managers(
+            context,
+            f"💰 Заявку #{record_id} ({manager_name}) <b>оплачено</b> бухгалтером.",
+            exclude_id=manager_id
+        )
 
         # Якщо закупка — оновлюємо склад
         if op_label == "Закупка":
