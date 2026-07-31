@@ -455,9 +455,22 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data.startswith("edit_field_"):
         field = data[11:]
         context.user_data["editing_field"] = field
+
+        # Для машини — показуємо меню вибору з списку
+        if field == "vehicle":
+            keyboard = InlineKeyboardMarkup([
+                [InlineKeyboardButton("🚛 Тягач", callback_data="editveh_trucks_0")],
+                [InlineKeyboardButton("🛢 Цистерна", callback_data="editveh_tanks_0")],
+                [InlineKeyboardButton("✏️ Ввести вручну", callback_data="editveh_manual")],
+            ])
+            await query.edit_message_text(
+                "🚗 Оберіть тип транспорту:",
+                reply_markup=keyboard
+            )
+            return
+
         context.user_data["step"] = "editing_field"
         field_labels = {
-            "vehicle": "🚗 машину (введіть номер, наприклад BA2187BK)",
             "description": "📝 опис робіт / запчастин",
             "amount": "💰 суму (тільки число)",
             "contractor": "🏪 постачальника / СТО",
@@ -467,6 +480,39 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(
             f"Введіть нове значення для поля {field_labels.get(field, field)}:"
         )
+        return
+
+    # ── РЕДАГУВАННЯ МАШИНИ ЗІ СПИСКУ ──
+    if data == "editveh_manual":
+        context.user_data["step"] = "editing_field"
+        await query.edit_message_text(
+            "Введіть номер машини вручну (наприклад BA2049HC):"
+        )
+        return
+
+    if data.startswith("editveh_trucks_") or data.startswith("editveh_tanks_"):
+        parts = data.split("_")
+        vtype = parts[1]
+        page = int(parts[2])
+        await show_edit_vehicle_selection(query, context, vtype, page)
+        return
+
+    if data.startswith("editpick_truck_"):
+        vehicle = data[15:]
+        context.user_data["vehicle"] = vehicle
+        context.user_data["vehicle_type"] = "тягач"
+        context.user_data.pop("editing_field", None)
+        context.user_data["step"] = "confirming"
+        await show_confirmation(query, context)
+        return
+
+    if data.startswith("editpick_tank_"):
+        vehicle = data[14:]
+        context.user_data["vehicle"] = vehicle
+        context.user_data["vehicle_type"] = "цистерна"
+        context.user_data.pop("editing_field", None)
+        context.user_data["step"] = "confirming"
+        await show_confirmation(query, context)
         return
 
     if data == "confirm_vehicle":
@@ -531,6 +577,41 @@ async def ask_vehicle(query, context):
         f"{op_label}\n\nОберіть тип транспорту:",
         reply_markup=keyboard
     )
+
+async def show_edit_vehicle_selection(query, context, vtype, page):
+    """Показує список машин при редагуванні поля 'машина'."""
+    items = TRUCKS if vtype == "trucks" else TANKS
+    prefix = "editpick_truck_" if vtype == "trucks" else "editpick_tank_"
+    per_page = 8
+    start = page * per_page
+    end = min(start + per_page, len(items))
+    chunk = items[start:end]
+
+    rows = []
+    for i in range(0, len(chunk), 2):
+        row = [InlineKeyboardButton(chunk[i], callback_data=f"{prefix}{chunk[i]}")]
+        if i + 1 < len(chunk):
+            row.append(InlineKeyboardButton(chunk[i+1], callback_data=f"{prefix}{chunk[i+1]}"))
+        rows.append(row)
+
+    nav = []
+    if page > 0:
+        nav.append(InlineKeyboardButton("◀️", callback_data=f"editveh_{vtype}_{page-1}"))
+    if end < len(items):
+        nav.append(InlineKeyboardButton("▶️", callback_data=f"editveh_{vtype}_{page+1}"))
+    if nav:
+        rows.append(nav)
+
+    other = "tanks" if vtype == "trucks" else "trucks"
+    other_label = "🛢 Цистерни" if vtype == "trucks" else "🚛 Тягачі"
+    rows.append([InlineKeyboardButton(f"↩️ {other_label}", callback_data=f"editveh_{other}_0")])
+
+    label = "Тягачі" if vtype == "trucks" else "Цистерни"
+    await query.edit_message_text(
+        f"Оберіть {label} ({start+1}-{end} з {len(items)}):",
+        reply_markup=InlineKeyboardMarkup(rows)
+    )
+
 
 async def show_vehicle_selection(query, context, vtype, page):
     items = TRUCKS if vtype == "trucks" else TANKS
