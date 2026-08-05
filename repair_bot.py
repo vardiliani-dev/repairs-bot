@@ -749,6 +749,36 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     step = context.user_data.get("step")
 
+    # Введення кількості і одиниці для закупки (після AI розпізнавання)
+    if step == "purchase_qty_unit":
+        text = update.message.text.strip()
+        # Формат: "200 л" або "12 шт"
+        parts = text.replace(",", ".").split()
+        if len(parts) < 2:
+            await update.message.reply_text(
+                "❗️ Введіть кількість і одиницю через пробіл. Наприклад: <code>200 л</code>",
+                parse_mode="HTML"
+            )
+            return
+        try:
+            qty = float(parts[0])
+        except ValueError:
+            await update.message.reply_text(
+                "❗️ Перше значення має бути числом. Наприклад: <code>200 л</code>",
+                parse_mode="HTML"
+            )
+            return
+        unit = " ".join(parts[1:])
+        # Оновлюємо опис щоб включав кількість і одиницю
+        name = context.user_data.get("description", "") or "Позиція"
+        context.user_data["stock_name"] = name
+        context.user_data["stock_qty"]  = qty
+        context.user_data["stock_unit"] = unit
+        context.user_data["description"] = f"{name} {qty} {unit}"
+        context.user_data["step"] = "confirming"
+        await show_confirmation(update.message, context)
+        return
+
     # Редагування конкретного поля
     if step == "editing_field":
         field = context.user_data.get("editing_field")
@@ -1096,9 +1126,21 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "amount":       str(data.get("amount") or ""),
             "contractor":   data.get("contractor") or "",
             "invoice":      data.get("invoice") or "",
-            "step":         "confirming",
         })
 
+        # Якщо це закупка через AI — просимо ввести кількість і одиницю (для складу)
+        if context.user_data.get("op_type") == "purchase":
+            context.user_data["step"] = "purchase_qty_unit"
+            desc_preview = context.user_data.get("description", "") or "позиція"
+            await update.message.reply_text(
+                f"📥 AI розпізнав: <b>{desc_preview}</b>\n\n"
+                f"Введіть <b>кількість і одиницю</b> через пробіл (для складу):\n"
+                f"<i>Наприклад: 200 л, або 12 шт, або 5 кг</i>",
+                parse_mode="HTML"
+            )
+            return
+
+        context.user_data["step"] = "confirming"
         await show_confirmation(update.message, context)
 
     except Exception as e:
