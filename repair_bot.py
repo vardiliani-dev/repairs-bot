@@ -1375,9 +1375,9 @@ async def director_approve(query, context, record_id):
         # Визначаємо ID менеджера
         manager_id = data.get("manager_id") or get_manager_id_by_name(manager_name)
 
-        # Якщо готівка і закупка — одразу оновлюємо склад
-        if is_cash and op_label == "Закупка":
-            # Спочатку пробуємо взяти з bot_data, якщо нема — парсимо з опису
+        # Якщо це закупка — одразу оновлюємо склад (не чекаючи бухгалтера).
+        # Це працює як для готівки, так і для безналу (бо у нас відстрочка оплати).
+        if op_label == "Закупка":
             name  = data.get("stock_name", "")
             try:
                 qty = float(data.get("stock_qty", 0) or 0)
@@ -1585,29 +1585,7 @@ async def accountant_paid(query, context, record_id):
             exclude_id=manager_id
         )
 
-        # Якщо закупка — оновлюємо склад
-        if op_label == "Закупка":
-            desc         = row_data[5] if len(row_data) > 5 else ""
-            name  = data.get("stock_name", "")
-            try:
-                qty = float(data.get("stock_qty", 0) or 0)
-            except Exception:
-                qty = 0
-            unit  = data.get("stock_unit", "")
-
-            if not name or not qty:
-                name, qty, unit = parse_purchase_description(desc)
-
-            try:
-                amount_val = float(str(amount).replace(" ", "").replace(",", ".") or 0)
-            except Exception:
-                amount_val = 0
-            price_per_unit = round(amount_val / qty, 2) if qty else 0
-            if name and qty:
-                try:
-                    update_stock(name, unit, qty, price_per_unit)
-                except Exception as e:
-                    logger.error(f"update_stock error: {e}")
+        # Склад НЕ оновлюємо тут — це вже зроблено при погодженні директором.
 
     except Exception as e:
         logger.error(f"accountant_paid error: {e}")
@@ -1700,31 +1678,47 @@ async def report_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         records = ws.get_all_records()
         current_month = datetime.now().strftime("%m.%Y")
 
-        paid = [r for r in records
-                if r.get("Статус") == "Оплачено"
-                and current_month in str(r.get("Дата подачі", ""))]
+        # Всі підтверджені заявки (окрім "На погодженні" і "Відхилено")
+        confirmed_statuses = {"Погоджено", "Оплачено", "Списано"}
+        confirmed = [r for r in records
+                     if r.get("Статус") in confirmed_statuses
+                     and current_month in str(r.get("Дата подачі", ""))]
 
-        if not paid:
-            await update.message.reply_text(f"За {current_month} оплачених заявок немає.")
+        if not confirmed:
+            await update.message.reply_text(f"За {current_month} підтверджених заявок немає.")
             return
 
         by_vehicle = {}
-        for r in paid:
-            v = r.get("Машина", "невідомо")
-            amount = float(str(r.get("Сума", 0)).replace(" ", "") or 0)
-            by_vehicle[v] = by_vehicle.get(v, 0) + amount
+        paid_sum = 0
+        pending_pay = 0
+        cash_sum = 0
+        bank_sum = 0
+        for r in confirmed:
+            v = r.get("Машина", "невідомо") or "без машини"
+            try:
+                amt = float(str(r.get("Сума", 0)).replace(" ", "").replace(",", ".") or 0)
+            except Exception:
+                amt = 0
+            by_vehicle[v] = by_vehicle.get(v, 0) + amt
+            if r.get("Статус") == "Оплачено":
+                paid_sum += amt
+            elif r.get("Статус") == "Погоджено":
+                pending_pay += amt
+            if r.get("Форма оплати") == "готівка":
+                cash_sum += amt
+            elif r.get("Форма оплати") == "безнал":
+                bank_sum += amt
 
         total = sum(by_vehicle.values())
         top5  = sorted(by_vehicle.items(), key=lambda x: x[1], reverse=True)[:5]
-        cash  = sum(float(str(r.get("Сума",0)).replace(" ","") or 0)
-                    for r in paid if r.get("Форма оплати") == "готівка")
-        bank  = total - cash
 
         lines = [f"📊 <b>Звіт за {current_month}</b>\n"]
         lines.append(f"💰 Загальна сума: <b>{total:,.0f} грн</b>")
-        lines.append(f"💵 Готівка: {cash:,.0f} грн")
-        lines.append(f"🏦 Безнал: {bank:,.0f} грн")
-        lines.append(f"📋 Заявок: {len(paid)}\n")
+        lines.append(f"✅ Оплачено: {paid_sum:,.0f} грн")
+        lines.append(f"⏳ Очікує оплати: {pending_pay:,.0f} грн")
+        lines.append(f"💵 Готівка: {cash_sum:,.0f} грн")
+        lines.append(f"🏦 Безнал: {bank_sum:,.0f} грн")
+        lines.append(f"📋 Заявок: {len(confirmed)}\n")
         lines.append("<b>ТОП-5 машин:</b>")
         for i, (v, amt) in enumerate(top5, 1):
             lines.append(f"{i}. {v} — {amt:,.0f} грн")
