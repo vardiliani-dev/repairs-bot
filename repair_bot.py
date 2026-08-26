@@ -51,7 +51,6 @@ TANKS = [
     "ВА7718XF","АA2511XG","AA5942XG","BA0582XF","ВА7567XF",
     "ВА7719XF","СЕ2735ХР","СЕ2747ХР","ВА4694ХТ","ВА4847ХО",
     "BA6713XP","ВА4695ХТ","BA4821ХО","ВА5253ХР","ВА4954ХО",
-    "BA8689XF","BA8684XF","BA8685XF","BA8687XF",
 ]
 
 logging.basicConfig(level=logging.INFO)
@@ -533,6 +532,21 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data.startswith("accountant_paid_"):
         record_id = int(data[16:])
         await accountant_paid(query, context, record_id)
+        return
+
+    if data.startswith("rep_"):
+        period_key = data[4:]
+        try:
+            ws = get_repairs_sheet()
+            records = ws.get_all_records()
+            if period_key == "all":
+                text = build_report_for_period(records, "all", "весь час")
+            else:
+                text = build_report_for_period(records, period_key, period_key)
+            await query.edit_message_text(text, parse_mode="HTML")
+        except Exception as e:
+            logger.error(f"rep callback error: {e}")
+            await query.answer("Помилка", show_alert=True)
         return
 
     if data.startswith("wo_truck_"):
@@ -1713,6 +1727,86 @@ async def stock_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"Помилка: {str(e)[:200]}")
 
 
+def build_report_for_period(records, period_key, period_label):
+    """Формує звіт за період. period_key — 'MM.YYYY' або 'all'."""
+    confirmed_statuses = {"Погоджено", "Оплачено", "Списано"}
+
+    if period_key == "all":
+        confirmed = [r for r in records if r.get("Статус") in confirmed_statuses]
+    else:
+        confirmed = [r for r in records
+                     if r.get("Статус") in confirmed_statuses
+                     and period_key in str(r.get("Дата подачі", ""))]
+
+    if not confirmed:
+        return f"За {period_label} підтверджених заявок немає."
+
+    by_vehicle = {}
+    vehicle_count = {}
+    paid_sum = 0
+    pending_pay = 0
+    cash_sum = 0
+    bank_sum = 0
+    writeoff_sum = 0
+    for r in confirmed:
+        v = r.get("Машина", "") or "без машини"
+        try:
+            amt = float(str(r.get("Сума", 0)).replace(" ", "").replace(",", ".") or 0)
+        except Exception:
+            amt = 0
+        by_vehicle[v] = by_vehicle.get(v, 0) + amt
+        vehicle_count[v] = vehicle_count.get(v, 0) + 1
+        status = r.get("Статус")
+        if status == "Оплачено":
+            paid_sum += amt
+        elif status == "Погоджено":
+            pending_pay += amt
+        elif status == "Списано":
+            writeoff_sum += amt
+        pay = r.get("Форма оплати")
+        if pay == "готівка":
+            cash_sum += amt
+        elif pay == "безнал":
+            bank_sum += amt
+
+    total = sum(by_vehicle.values())
+    sorted_vehicles = sorted(by_vehicle.items(), key=lambda x: x[1], reverse=True)
+
+    lines = [f"📊 <b>Звіт за {period_label}</b>\n"]
+    lines.append(f"💰 Загальна сума: <b>{total:,.0f} грн</b>")
+    lines.append(f"✅ Оплачено: {paid_sum:,.0f} грн")
+    lines.append(f"⏳ Очікує оплати: {pending_pay:,.0f} грн")
+    if writeoff_sum:
+        lines.append(f"📤 Списано зі складу: {writeoff_sum:,.0f} грн")
+    lines.append(f"💵 Готівка: {cash_sum:,.0f} грн")
+    lines.append(f"🏦 Безнал: {bank_sum:,.0f} грн")
+    lines.append(f"📋 Заявок: {len(confirmed)}\n")
+    lines.append("<b>По машинах:</b>")
+    for v, amt in sorted_vehicles:
+        cnt = vehicle_count[v]
+        lines.append(f"🚛 {v} — <b>{amt:,.0f} грн</b> ({cnt} заявок)")
+
+    text = "\n".join(lines)
+    # Telegram обмеження — 4096 символів
+    if len(text) > 3900:
+        text = text[:3900] + "\n... (звіт скорочено)"
+    return text
+
+
+def get_month_options(records, limit=6):
+    """Знаходить останні N місяців з наявними заявками."""
+    months = set()
+    for r in records:
+        date_str = str(r.get("Дата подачі", ""))
+        # Формат: "DD.MM.YYYY HH:MM"
+        m = re.search(r'(\d{2})\.(\d{4})', date_str)
+        if m:
+            months.add(f"{m.group(1)}.{m.group(2)}")
+    # Сортуємо по спаданню (нові вгорі)
+    sorted_months = sorted(months, key=lambda x: (x.split('.')[1], x.split('.')[0]), reverse=True)
+    return sorted_months[:limit]
+
+
 async def report_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id not in MANAGER_IDS + [DIRECTOR_ID]:
         return
@@ -1721,52 +1815,30 @@ async def report_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         records = ws.get_all_records()
         current_month = datetime.now().strftime("%m.%Y")
 
-        # Всі підтверджені заявки (окрім "На погодженні" і "Відхилено")
-        confirmed_statuses = {"Погоджено", "Оплачено", "Списано"}
-        confirmed = [r for r in records
-                     if r.get("Статус") in confirmed_statuses
-                     and current_month in str(r.get("Дата подачі", ""))]
+        # Показуємо звіт за поточний місяць
+        text = build_report_for_period(records, current_month, current_month)
 
-        if not confirmed:
-            await update.message.reply_text(f"За {current_month} підтверджених заявок немає.")
-            return
+        # Кнопки для вибору іншого періоду
+        rows = []
+        months = get_month_options(records, limit=6)
+        month_names = {
+            "01": "Січень", "02": "Лютий", "03": "Березень", "04": "Квітень",
+            "05": "Травень", "06": "Червень", "07": "Липень", "08": "Серпень",
+            "09": "Вересень", "10": "Жовтень", "11": "Листопад", "12": "Грудень",
+        }
+        for m in months:
+            if m == current_month:
+                continue  # поточний вже показано
+            mm, yyyy = m.split('.')
+            label = f"📅 {month_names.get(mm, mm)} {yyyy}"
+            rows.append([InlineKeyboardButton(label, callback_data=f"rep_{m}")])
+        rows.append([InlineKeyboardButton("📊 За весь час", callback_data="rep_all")])
 
-        by_vehicle = {}
-        paid_sum = 0
-        pending_pay = 0
-        cash_sum = 0
-        bank_sum = 0
-        for r in confirmed:
-            v = r.get("Машина", "невідомо") or "без машини"
-            try:
-                amt = float(str(r.get("Сума", 0)).replace(" ", "").replace(",", ".") or 0)
-            except Exception:
-                amt = 0
-            by_vehicle[v] = by_vehicle.get(v, 0) + amt
-            if r.get("Статус") == "Оплачено":
-                paid_sum += amt
-            elif r.get("Статус") == "Погоджено":
-                pending_pay += amt
-            if r.get("Форма оплати") == "готівка":
-                cash_sum += amt
-            elif r.get("Форма оплати") == "безнал":
-                bank_sum += amt
-
-        total = sum(by_vehicle.values())
-        top5  = sorted(by_vehicle.items(), key=lambda x: x[1], reverse=True)[:5]
-
-        lines = [f"📊 <b>Звіт за {current_month}</b>\n"]
-        lines.append(f"💰 Загальна сума: <b>{total:,.0f} грн</b>")
-        lines.append(f"✅ Оплачено: {paid_sum:,.0f} грн")
-        lines.append(f"⏳ Очікує оплати: {pending_pay:,.0f} грн")
-        lines.append(f"💵 Готівка: {cash_sum:,.0f} грн")
-        lines.append(f"🏦 Безнал: {bank_sum:,.0f} грн")
-        lines.append(f"📋 Заявок: {len(confirmed)}\n")
-        lines.append("<b>ТОП-5 машин:</b>")
-        for i, (v, amt) in enumerate(top5, 1):
-            lines.append(f"{i}. {v} — {amt:,.0f} грн")
-
-        await update.message.reply_text("\n".join(lines), parse_mode="HTML")
+        await update.message.reply_text(
+            text,
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup(rows) if rows else None
+        )
 
     except Exception as e:
         logger.error(f"report_cmd error: {e}")
