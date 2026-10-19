@@ -42,8 +42,7 @@ TRUCKS = [
     "BA8476EP","AM6937HE","ВА7289НІ","ВА7286НІ","ВА6675НІ",
     "ВА6678НІ","ВА2049НС","ВА9914ЕТ","BA6468EP","ВА7287НІ",
     "ВА8467НІ","ВА5952НС","ВА7990ЕН","ВА7954АО","ВА1483ЕО",
-    "BA2187BK","ВА9244ЕН","ВА8712ЕР","KA3566HE", "AB9715ME",
-    "КА4788АН",
+    "BA2187BK","ВА9244ЕН","ВА8712ЕР","KA3566HE",
 ]
 
 # Список всіх цистерн
@@ -53,7 +52,6 @@ TANKS = [
     "ВА7718XF","АA2511XG","AA5942XG","BA0582XF","ВА7567XF",
     "ВА7719XF","СЕ2735ХР","СЕ2747ХР","ВА4694ХТ","ВА4847ХО",
     "BA6713XP","ВА4695ХТ","BA4821ХО","ВА5253ХР","ВА4954ХО",
-    "BA8689XF","BA8684XF","BA8685XF","BA8687XF",
 ]
 
 logging.basicConfig(level=logging.INFO)
@@ -119,7 +117,8 @@ def get_repairs_sheet():
         "ID", "Дата подачі", "Тип", "Машина", "Тип машини",
         "Опис робіт / Запчастини", "Сума", "Форма оплати",
         "СТО / Постачальник", "Номер рахунку", "Менеджер",
-        "Статус", "Дата погодження", "Дата оплати"
+        "Статус", "Дата погодження", "Дата оплати",
+        "File ID", "File Type"
     ])
 
 def get_stock_sheet():
@@ -1276,6 +1275,9 @@ async def submit_for_approval(query, context):
         op_labels = {"repair": "Ремонт", "purchase": "Закупка", "writeoff": "Списання"}
         op_label = op_labels.get(op, op)
 
+        file_id   = context.user_data.get("file_id", "")
+        file_type = context.user_data.get("file_type", "")
+
         ws.append_row([
             record_id,
             datetime.now().strftime("%d.%m.%Y %H:%M"),
@@ -1289,7 +1291,8 @@ async def submit_for_approval(query, context):
             invoice,
             manager,
             "На погодженні",
-            "", ""
+            "", "",
+            file_id, file_type
         ])
 
         context.application.bot_data[f"repair_{record_id}"] = dict(context.user_data)
@@ -1431,6 +1434,12 @@ async def director_approve(query, context, record_id):
         data = context.application.bot_data.get(f"repair_{record_id}", {})
         file_id   = data.get("file_id")
         file_type = data.get("file_type")
+
+        # Якщо в bot_data немає file_id (наприклад після перезапуску Railway) —
+        # беремо з таблиці (колонки 15, 16)
+        if not file_id and len(row_data) > 14:
+            file_id   = row_data[14] if len(row_data) > 14 else ""
+            file_type = row_data[15] if len(row_data) > 15 else ""
 
         # Визначаємо ID менеджера
         manager_id = data.get("manager_id") or get_manager_id_by_name(manager_name)
