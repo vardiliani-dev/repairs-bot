@@ -149,15 +149,28 @@ def get_manager_id_by_name(name):
             return uid
     return None
 
-async def broadcast_to_managers(context, text, exclude_id=None, parse_mode="HTML"):
-    """Розсилає текст усім менеджерам крім exclude_id."""
+async def broadcast_to_managers(context, text, exclude_id=None, parse_mode="HTML",
+                                 file_id=None, file_type=None):
+    """Розсилає текст усім менеджерам крім exclude_id. Якщо є file_id — пересилає з файлом."""
     for mid in MANAGER_IDS:
         if mid == exclude_id:
             continue
         try:
-            await context.bot.send_message(
-                chat_id=mid, text=text, parse_mode=parse_mode
-            )
+            if file_id:
+                if file_type == "document":
+                    await context.bot.send_document(
+                        chat_id=mid, document=file_id,
+                        caption=text, parse_mode=parse_mode
+                    )
+                else:
+                    await context.bot.send_photo(
+                        chat_id=mid, photo=file_id,
+                        caption=text, parse_mode=parse_mode
+                    )
+            else:
+                await context.bot.send_message(
+                    chat_id=mid, text=text, parse_mode=parse_mode
+                )
         except Exception as e:
             logger.error(f"broadcast to {mid} error: {e}")
 
@@ -1315,7 +1328,10 @@ async def submit_for_approval(query, context):
             f"🏪 {contr}\n"
             f"⏳ На погодженні у директора"
         )
-        await broadcast_to_managers(context, broadcast_text, exclude_id=query.from_user.id)
+        await broadcast_to_managers(
+            context, broadcast_text, exclude_id=query.from_user.id,
+            file_id=file_id, file_type=file_type
+        )
 
         director_text = (
             f"📋 <b>Нова заявка #{record_id}</b>\n\n"
